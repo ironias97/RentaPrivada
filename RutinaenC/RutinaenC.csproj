@@ -1,0 +1,83 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{7C526656-753D-449E-84E8-DF06735D5B0E}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>RutinaenC</RootNamespace>
+    <AssemblyName>RutinaenC</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject />
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Modelos\beCPK.cs" />
+    <Compile Include="Modelos\beCurvaTasas.cs" />
+    <Compile Include="Modelos\beDatosBen.cs" />
+    <Compile Include="Modelos\beDatosModalidad.cs" />
+    <Compile Include="Modelos\beDatosTasasPar.cs" />
+    <Compile Include="Modelos\beMortalidad.cs" />
+    <Compile Include="Modelos\beMortalidadDet.cs" />
+    <Compile Include="Modelos\beMortalidadDin.cs" />
+    <Compile Include="Modelos\beMortalidadDinDet.cs" />
+    <Compile Include="Modelos\beMortalidadDinVal.cs" />
+    <Compile Include="Modelos\Beneficiario.cs" />
+    <Compile Include="Modelos\bePorcenLegales.cs" />
+    <Compile Include="Modelos\beRentabilidad.cs" />
+    <Compile Include="Modelos\beResultados.cs" />
+    <Compile Include="Modelos\beTasaAnclaje.cs" />
+    <Compile Include="Modelos\beTasaFacVac.cs" />
+    <Compile Include="Modelos\beTasaMercado.cs" />
+    <Compile Include="Modelos\beTasasPromedio.cs" />
+    <Compile Include="Modelos\Mortalidad.cs" />
+    <Compile Include="Modelos\TipoAjustado.cs" />
+    <Compile Include="Muestra\beMortalVar.cs" />
+    <Compile Include="Muestra\PruebasRutina.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RutinaAct.cs" />
+    <Compile Include="RutinaActMej.cs" />
+    <Compile Include="RutinaActuarial.cs" />
+    <Compile Include="RutinaMortalidad.cs" />
+    <Compile Include="RutinaMortalidadDin.cs" />
+    <Compile Include="RutinaPorcentaje.cs" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

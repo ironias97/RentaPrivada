@@ -1,0 +1,42 @@
+C:\Users\Paolo\Desktop\RutinaenC_Ofi\RutinaenC\bin\Debug\RutinaenC.exe
+C:\Users\Paolo\Desktop\RutinaenC_Ofi\RutinaenC\bin\Debug\RutinaenC.pdb
+C:\Users\Paolo\Desktop\RutinaenC_Ofi\RutinaenC\obj\Debug\RutinaenC.exe
+C:\Users\Paolo\Desktop\RutinaenC_Ofi\RutinaenC\obj\Debug\RutinaenC.pdb
+C:\Users\Paolo\Desktop\RutinaenC_Ofi\RutinaenC\obj\Debug\RutinaenC.csprojResolveAssemblyReference.cache
+D:\Desarrollo\Proyectos\ProyNet\toNet\VIDACAM\RutinaenC_Ofi\RutinaenC\obj\Debug\RutinaenC.exe
+D:\Desarrollo\Proyectos\ProyNet\toNet\VIDACAM\RutinaenC_Ofi\RutinaenC\obj\Debug\RutinaenC.pdb
+D:\Desarrollo\Proyectos\ProyNet\toNet\VIDACAM\RutinaenC_Ofi\RutinaenC\bin\Debug\RutinaenC.exe
+D:\Desarrollo\Proyectos\ProyNet\toNet\VIDACAM\RutinaenC_Ofi\RutinaenC\bin\Debug\RutinaenC.pdb
+D:\Desarrollo\Proyectos\ProyNet\toNet\VIDACAM\RutinaenC_Ofi\RutinaenC\obj\Debug\RutinaenC.csprojResolveAssemblyReference.cache
+D:\Desarrollo\Proyectos\ProyNet\toNet\VIDACAM\Pruebas\RutinaenC_Ofi (5)\RutinaenC_Ofi\RutinaenC\obj\Debug\RutinaenC.exe
+D:\Desarrollo\Proyectos\ProyNet\toNet\VIDACAM\Pruebas\RutinaenC_Ofi (5)\RutinaenC_Ofi\RutinaenC\obj\Debug\RutinaenC.pdb
+D:\Desarrollo\Proyectos\ProyNet\toNet\VIDACAM\Pruebas\RutinaenC_Ofi (5)\RutinaenC_Ofi\RutinaenC\bin\Debug\RutinaenC.exe
+D:\Desarrollo\Proyectos\ProyNet\toNet\VIDACAM\Pruebas\RutinaenC_Ofi (5)\RutinaenC_Ofi\RutinaenC\bin\Debug\RutinaenC.pdb
+D:\Desarrollo\Proyectos\ProyNet\toNet\VIDACAM\Pruebas\RutinaenC_Ofi (5)\RutinaenC_Ofi\RutinaenC\obj\Debug\RutinaenC.csprojResolveAssemblyReference.cache
+D:\Desarrollo\Proyectos\ProyNet\toNet\VIDACAM\Pruebas\RutinaenC_Ofi_Mod_250519\RutinaenC_Ofi\RutinaenC\obj\Debug\RutinaenC.exe
+D:\Desarrollo\Proyectos\ProyNet\toNet\VIDACAM\Pruebas\RutinaenC_Ofi_Mod_250519\RutinaenC_Ofi\RutinaenC\obj\Debug\RutinaenC.pdb
+D:\Desarrollo\Proyectos\ProyNet\toNet\VIDACAM\Pruebas\RutinaenC_Ofi_Mod_250519\RutinaenC_Ofi\RutinaenC\bin\Debug\RutinaenC.exe
+D:\Desarrollo\Proyectos\ProyNet\toNet\VIDACAM\Pruebas\RutinaenC_Ofi_Mod_250519\RutinaenC_Ofi\RutinaenC\bin\Debug\RutinaenC.pdb
+D:\Desarrollo\Proyectos\ProyNet\toNet\VIDACAM\Pruebas\RutinaenC_Ofi_Mod_250519\RutinaenC_Ofi\RutinaenC\obj\Debug\RutinaenC.csprojResolveAssemblyReference.cache
+D:\Desarrollo\Proyectos\ProyNet\toNet\VIDACAM\RutinaenC_Mej\RutinaenC\obj\Debug\RutinaenC.exe
+D:\Desarrollo\Proyectos\ProyNet\toNet\VIDACAM\RutinaenC_Mej\RutinaenC\obj\Debug\RutinaenC.pdb
+D:\Desarrollo\Proyectos\ProyNet\toNet\VIDACAM\RutinaenC_Mej\RutinaenC\obj\Debug\RutinaenC.csprojResolveAssemblyReference.cache
+D:\Desarrollo\Proyectos\ProyNet\toNet\VIDACAM\RutinaenC_Mej\RutinaenC\bin\Debug\RutinaenC.exe
+D:\Desarrollo\Proyectos\ProyNet\toNet\VIDACAM\RutinaenC_Mej\RutinaenC\bin\Debug\RutinaenC.pdb
+C:\Users\Soporte\Desktop\Documentos\CTO\Renta Privada\RutinaenC_Mej\RutinaenC\bin\Debug\RutinaenC.exe
+C:\Users\Soporte\Desktop\Documentos\CTO\Renta Privada\RutinaenC_Mej\RutinaenC\bin\Debug\RutinaenC.pdb
+C:\Users\Soporte\Desktop\Documentos\CTO\Renta Privada\RutinaenC_Mej\RutinaenC\obj\Debug\RutinaenC.csprojResolveAssemblyReference.cache
+C:\Users\Soporte\Desktop\Documentos\CTO\Renta Privada\RutinaenC_Mej\RutinaenC\obj\Debug\RutinaenC.csproj.CoreCompileInputs.cache
+C:\Users\Soporte\Desktop\Documentos\CTO\Renta Privada\RutinaenC_Mej\RutinaenC\obj\Debug\RutinaenC.exe
+C:\Users\Soporte\Desktop\Documentos\CTO\Renta Privada\RutinaenC_Mej\RutinaenC\obj\Debug\RutinaenC.pdb
+C:\Users\Soporte\Desktop\Documentos\CTO\Renta Privada\Rutina Optimizada\RutinaenC_Mej\RutinaenC\obj\Debug\RutinaenC.csprojResolveAssemblyReference.cache
+C:\Users\Soporte\Desktop\Documentos\CTO\Renta Privada\Rutina Optimizada\RutinaenC_Mej\RutinaenC\obj\Debug\RutinaenC.csproj.CoreCompileInputs.cache
+C:\Users\Soporte\Desktop\Documentos\CTO\Renta Privada\Rutina Optimizada\RutinaenC_Mej\RutinaenC\obj\Debug\RutinaenC.exe
+C:\Users\Soporte\Desktop\Documentos\CTO\Renta Privada\Rutina Optimizada\RutinaenC_Mej\RutinaenC\obj\Debug\RutinaenC.pdb
+C:\Users\Soporte\Desktop\Documentos\CTO\Renta Privada\Rutina Optimizada\RutinaenC_Mej\RutinaenC\bin\Debug\RutinaenC.exe
+C:\Users\Soporte\Desktop\Documentos\CTO\Renta Privada\Rutina Optimizada\RutinaenC_Mej\RutinaenC\bin\Debug\RutinaenC.pdb
+C:\Respaldos\RutinaenC_Mej\RutinaenC\obj\Debug\RutinaenC.exe
+C:\Respaldos\RutinaenC_Mej\RutinaenC\obj\Debug\RutinaenC.pdb
+C:\Respaldos\RutinaenC_Mej\RutinaenC\bin\Debug\RutinaenC.exe
+C:\Respaldos\RutinaenC_Mej\RutinaenC\bin\Debug\RutinaenC.pdb
+C:\Respaldos\RutinaenC_Mej\RutinaenC\obj\Debug\RutinaenC.csprojResolveAssemblyReference.cache

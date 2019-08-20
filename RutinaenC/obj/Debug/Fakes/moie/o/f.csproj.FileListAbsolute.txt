@@ -1,0 +1,4 @@
+C:\Users\Paolo\Desktop\RutinaenC_Ofi_ant\RutinaenC\obj\Debug\Fakes\moie\b\Microsoft.Office.Interop.Excel.14.0.0.0.Fakes.xml
+C:\Users\Paolo\Desktop\RutinaenC_Ofi_ant\RutinaenC\obj\Debug\Fakes\moie\o\f.csprojResolveAssemblyReference.cache
+C:\Users\Paolo\Desktop\RutinaenC_Ofi\RutinaenC\obj\Debug\Fakes\moie\b\Microsoft.Office.Interop.Excel.14.0.0.0.Fakes.xml
+C:\Users\Paolo\Desktop\RutinaenC_Ofi\RutinaenC\obj\Debug\Fakes\moie\o\f.csprojResolveAssemblyReference.cache
