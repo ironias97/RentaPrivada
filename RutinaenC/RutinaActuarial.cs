@@ -426,19 +426,20 @@ namespace RutinaenC
                 List<Mortalidad> listaLxDin = new List<Mortalidad>();
 
                 int anio;
+                int anioAux;
                 int tipoInvalidez;
                 int sexo;
-                int meses;
 
                 decimal FxQx;
                 decimal FxAx;
                 decimal ExoQ;
                 decimal ExpQ;
                 decimal FxQxFm;
-                decimal auxFxQxFm = 0;
-
+                
                 decimal FxLxF = 0;
                 decimal FxQxF = 0;
+                decimal FxQxFmAux = 0;
+                int mesAux = 0;
 
                 foreach (var item in modeloMortalidad)
                 {
@@ -459,34 +460,35 @@ namespace RutinaenC
                     tipoInvalidez = item.TipoInvalidez == null ? 0 : item.TipoInvalidez == "N" ? 2 : 1;
                     sexo = item.Sexo == null ? 0 : item.Sexo == "M" ? 1 : 2;
 
-                    meses = 0;
-                    for (int anios = 0; anios < (finMortalidad / 12); anios++)
+                    for (int mes = 0; mes < finMortalidad; mes++)
                     {
                         lxDin = new Mortalidad();
 
-                        FxQx = (from m in listaMortalidad where m.i == sexo && m.j == tipoInvalidez && m.k == anios select m.MtoLx).FirstOrDefault();
-                        FxAx = (from m in listaMortalidad where m.i == sexo && m.j == tipoInvalidez && m.k == anios select m.MtoAx).FirstOrDefault();
-
-                        ExoQ = (1 - FxAx);
-                        ExpQ = (anio + anios - aniosBasTM);
-                        ExpQ = ExpQ < 0 ? 0 : ExpQ;
-                        FxQxF = FxQx * (decimal)(Math.Pow((double)ExoQ, (double)ExpQ));
-
-                        for (int mes = 0; mes < 12; mes++)
+                        if ((mes % 12) == 0)
                         {
-                            FxQxFm = Exp * FxQxF / ((12 - mes * FxQxF) / 12);
+                            anioAux = mes / 12;
+                            mesAux = 0;
 
-                            FxLxF = meses == 0 ? 100000 : FxLxF * (1 - auxFxQxFm);
+                            FxQx = (from m in listaMortalidad where m.i == sexo && m.j == tipoInvalidez && m.k == anioAux select m.MtoLx).FirstOrDefault();
+                            FxAx = (from m in listaMortalidad where m.i == sexo && m.j == tipoInvalidez && m.k == anioAux select m.MtoAx).FirstOrDefault();
 
-                            lxDin.IdBeneficiario = item.IdBeneficiario;
-                            lxDin.Mes = anios * 12 + mes;
-                            lxDin.LxDin = Math.Round(FxLxF, 9);
-                            auxFxQxFm = FxQxFm;
-                            meses++;
+                            ExoQ = (1 - FxAx);
+                            ExpQ = (anio + anioAux - aniosBasTM);
+                            ExpQ = ExpQ < 0 ? 0 : ExpQ;
+                            FxQxF = FxQx * (decimal)(Math.Pow((double)ExoQ, (double)ExpQ));
+                        }
 
-                            listaLxDin.Add(lxDin);
-                         }
+                        FxQxFm = Exp * FxQxF / ((12 - mesAux * FxQxF) / 12);
+                        FxLxF = mes == 0 ? 100000 : FxLxF * (1 - FxQxFmAux);
 
+                        FxQxFmAux = FxQxFm;
+                        mesAux++;
+
+                        lxDin.IdBeneficiario = item.IdBeneficiario;
+                        lxDin.Mes = mes;
+                        lxDin.LxDin = Math.Round(FxLxF, 9);
+
+                        listaLxDin.Add(lxDin);
                     }
                 }
 
