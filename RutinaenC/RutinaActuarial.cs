@@ -40,13 +40,18 @@ namespace RutinaenC
                 List<beRentabilidad> tasasRentabilidad = new List<beRentabilidad>();
                 List<Mortalidad> tablasMortalidad = new List<Mortalidad>();
 
+                List<double> factorReajuste = new List<double>();
+                List<int> gratificacion = new List<int>();
+
                 double tasaAnclaje;
                 double tasaPromedio;
                 double tasaMercado;
                 double sumaPorcentajePension;
 
                 string tipoPension = modeloCotizacion.Cobertura;
+
                 int finTab = modeloCotizacion.FinTab;
+                int tipoReajuste = modeloCotizacion.TipRea;
 
                 beneficiarios = CargarBeneficiarios(modeloBeneficiarios, tipoPension);
                 tasa = CargarTasas(modeloTasas, ref modeloCotizacion);
@@ -58,6 +63,12 @@ namespace RutinaenC
                 tasasRentabilidad = CargarTasasRentabilidad(modeloRentabilidad, modeloCotizacion);
                 tablasMortalidad = CargarMortalidad(modeloMortalidad, beneficiarios, finTab);
                 sumaPorcentajePension = CambiarPension(modeloBeneficiarios, modeloPorcentajeLegal, modeloCotizacion);
+                gratificacion = ObtenerGratificacion(modeloCotizacion);
+
+                if (tipoReajuste == 1)
+                    factorReajuste = ObtenerTipoIndexado(modeloFactorVac, modeloCotizacion, beneficiarios, gratificacion);
+                else
+                    factorReajuste = ObtenerTipoAjustado(modeloCotizacion, beneficiarios, gratificacion);
 
                 return resultados;
             }
@@ -460,7 +471,7 @@ namespace RutinaenC
                     tipoInvalidez = item.TipoInvalidez == null ? 0 : item.TipoInvalidez == "N" ? 2 : 1;
                     sexo = item.Sexo == null ? 0 : item.Sexo == "M" ? 1 : 2;
 
-                    for (int mes = 0; mes < finMortalidad; mes++)
+                    for (int mes = 0; mes <= finMortalidad; mes++)
                     {
                         lxDin = new Mortalidad();
 
@@ -687,7 +698,7 @@ namespace RutinaenC
         public List<double> ObtenerTipoAjustado(beDatosModalidad modeloCotizacion, List<Beneficiario> beneficiarios, List<int> gratificacion)
         {
             List<double> factorReajuste = new List<double>();
-            TipoAjustado tipoAjustado = new TipoAjustado();
+            List<TipoAjustado> listaTipoAjustado = ObtenerListaTipoAjustado(); 
 
             int finMortalidad = modeloCotizacion.FinTab;
             int anios = Convert.ToInt32(modeloCotizacion.FecDev.Substring(0, 4));
@@ -712,8 +723,8 @@ namespace RutinaenC
 
             string tipoPension = modeloCotizacion.Cobertura;
 
-            ki = (from ta in tipoAjustado.ListaTipoAjustado where ta.Mes == fechaDevengue.Month select ta.Ki).First();
-            paso = (from ta in tipoAjustado.ListaTipoAjustado where ta.Mes == fechaDevengue.Month select ta.Paso).First();
+            ki = (from ta in listaTipoAjustado where ta.Mes == fechaDevengue.Month select ta.Ki).First();
+            paso = (from ta in listaTipoAjustado where ta.Mes == fechaDevengue.Month select ta.Paso).First();
 
             factorReajuste.Add(0);
             factorReajuste.Add(1);
@@ -835,14 +846,114 @@ namespace RutinaenC
             return gratificacion;
         }
 
+        public List<TipoAjustado> ObtenerListaTipoAjustado()
+        {
+            List<TipoAjustado> ListaTipoAjustado = new List<TipoAjustado>();
+            // Enero
+            ListaTipoAjustado.Add(new TipoAjustado()
+            {
+                Mes = 1,
+                Ki = 3,
+                Paso = 3
+            });
+
+            // Febrero
+            ListaTipoAjustado.Add(new TipoAjustado()
+            {
+                Mes = 2,
+                Ki = 2,
+                Paso = 3
+            });
+
+            // Marzo
+            ListaTipoAjustado.Add(new TipoAjustado()
+            {
+                Mes = 3,
+                Ki = 1,
+                Paso = 2
+            });
+
+            // Abril
+            ListaTipoAjustado.Add(new TipoAjustado()
+            {
+                Mes = 4,
+                Ki = 3,
+                Paso = 3
+            });
+
+            // Mayo
+            ListaTipoAjustado.Add(new TipoAjustado()
+            {
+                Mes = 5,
+                Ki = 2,
+                Paso = 3
+            });
+
+            // Junio
+            ListaTipoAjustado.Add(new TipoAjustado()
+            {
+                Mes = 6,
+                Ki = 1,
+                Paso = 2
+            });
+
+            // Julio
+            ListaTipoAjustado.Add(new TipoAjustado()
+            {
+                Mes = 7,
+                Ki = 3,
+                Paso = 3
+            });
+
+            // Agosto
+            ListaTipoAjustado.Add(new TipoAjustado()
+            {
+                Mes = 8,
+                Ki = 2,
+                Paso = 3
+            });
+
+            // Septiembre
+            ListaTipoAjustado.Add(new TipoAjustado()
+            {
+                Mes = 9,
+                Ki = 1,
+                Paso = 2
+            });
+
+            // Octubre
+            ListaTipoAjustado.Add(new TipoAjustado()
+            {
+                Mes = 10,
+                Ki = 3,
+                Paso = 3
+            });
+
+            // Noviembre
+            ListaTipoAjustado.Add(new TipoAjustado()
+            {
+                Mes = 11,
+                Ki = 2,
+                Paso = 3
+            });
+
+            // Diciembre
+            ListaTipoAjustado.Add(new TipoAjustado()
+            {
+                Mes = 12,
+                Ki = 1,
+                Paso = 2
+            });
+            return ListaTipoAjustado;
+        }
+
+
         //public void CalcularFlujosPension(beDatosModalidad modeloCotizacion)
         //{
-        //    new_prc = 1;
-        //    //flujos para tramos
-        //    for (long g = 0; g <= 1332; g++)
-        //    {
-        //        fTramos[g] = 1;
-        //    }
+        //    string tipoPension = modeloCotizacion.Cobertura;
+
+        //    double nuevoPorcentaje = 1;
+
 
         //    if (TipRen == "E")
         //    {
@@ -862,14 +973,7 @@ namespace RutinaenC
         //        facfam = 1;
         //        for (j = 0; j <= Nben; j++)
         //        {
-        //            for (long g = 0; g <= 1332; g++)
-        //            {
-        //                ftpx[g] = 0;
-        //                fqxt[g] = 0;
-        //                fpy[g] = 0;
-        //                fqxy[g] = 0;
-        //                valotemp[g] = 0;
-        //            }
+
         //            //280519
         //            nmdiga = perdif + Mesgar;
         //            //280519
@@ -1374,7 +1478,7 @@ namespace RutinaenC
 
         //            }
 
-        //        Next:
+        //            Next:
         //            Alt = "";
         //        }
         //    }
@@ -1401,7 +1505,7 @@ namespace RutinaenC
 
         //    double tirVenta = ((Math.Pow((1 + (tasa.PrcTas / 100)), (double)Exp)) - 1) + 0.00001;
 
-        //CalTva:
+        //    CalTva:
         //    tasatirc = 0;
 
         //    tirVenta = tirVenta - 0.00001;
@@ -1695,7 +1799,7 @@ namespace RutinaenC
 
         //    }
 
-        //CalExd:
+        //    CalExd:
         //    sumaex = 0;
         //    for (i = 1; i <= vlContarMaximo; i++)
         //    {
@@ -2004,7 +2108,7 @@ namespace RutinaenC
         //    tir = 0;
         //    tinc = 0.00001;
 
-        //CalTce2:
+        //    CalTce2:
         //    //EMPIEZA LA RUTINA DEL CALCULO DE TCE 
         //    //Tasa = (Math.Pow((1 + tir / 100), (double)Exp) - 1);
         //    Tasa = (tir / 100);
@@ -2141,10 +2245,10 @@ namespace RutinaenC
         //        resfinAnt = resfin;
         //    }
 
-        //CalSalExd:
+        //    CalSalExd:
         //    tasatirc = 0;
         //    sumaex = 0;
-        //CalExd2:
+        //    CalExd2:
         //    sumaex = 0;
         //    for (i = 1; i <= vlContarMaximo; i++)
         //    {
