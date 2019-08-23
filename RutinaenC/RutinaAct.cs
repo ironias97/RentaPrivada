@@ -1332,7 +1332,7 @@ namespace RutinaenC
                         //280519
                         Penben[j] = Porcbe[j];
                         numbep = numbep + 1;
-                        
+                        #region  "Titular TipPen S"
                         if (Ncorbe[j] == 99 && j == 0)
                         {
                             if (ind_cob == "S")
@@ -1454,6 +1454,8 @@ namespace RutinaenC
                                 return ListaResultador;
                             }  
                         }
+                       #endregion
+                        #region "No titulares TipPen S"
                         if (Ncorbe[j] != 99)
                         {
                             Penben[j] = porcbe_ori[j]; /// new_prc;
@@ -1619,6 +1621,7 @@ namespace RutinaenC
                                 }
                             }
                         }
+                    
                     }
                 }
                 else //'Calculo de flujos de Sobrevivencia
