@@ -278,7 +278,7 @@ namespace RutinaenC
                 throw;
             }
         }
-       
+
         /// <summary>
         /// Julieta González / Antonio Quezada
         /// 2019-08-01
@@ -784,9 +784,9 @@ namespace RutinaenC
 
             return factorReajuste;
         }
-        
+
         #endregion
-        
+
         #region "Calcula Flujos de Pensión"
         public void CalcularFlujosPension(beDatosModalidad modeloCotizacion, List<Beneficiario> beneficiarios, List<Mortalidad> listaLxDin, List<Mortalidad> tablasMortalidad, List<int> gratificacion, List<double> factorReajuste)
         {
@@ -929,13 +929,13 @@ namespace RutinaenC
                             px = i < limiteTotal ? 1 : tpx;
                         }
                     }
-                    
+
                     flujosPension.Add(flujosPension[contador] + px * porcentajePension * gratificacion[contador] * factorReajuste[contador] * flujoTramos[contador]);
 
                     //saca el gasto de Sepelio
                     if (i > 0)
                         qx = (i < limiteTotalGastoSepelio) ? 0 : ftpx - tpx;
-                    
+
                     flujosMesesConsumidos.Add(flujosMesesConsumidos[contador] + gastoFunerario * qx);
 
                     ftpx = tpx;
@@ -953,20 +953,20 @@ namespace RutinaenC
                 throw;
             }
         }
-       
-        public void FlujoPensionNoTitular(List<Beneficiario> beneficiarios, double sumaMesesGarantizadoDiferido, beDatosModalidad modeloCotizacion)
-        {  
-            Mortalidad lxDin = new Mortalidad();
-            Mortalidad lxDinSiguiente = new Mortalidad ();
 
-            double pensionBeneficiario = 
-           
+        public void FlujoPensionNoTitular(List<Beneficiario> beneficiarios, double sumaMesesGarantizadoDiferido, beDatosModalidad modeloCotizacion)
+        {
+            Mortalidad lxDin = new Mortalidad();
+            Mortalidad lxDinSiguiente = new Mortalidad();
+
+            double pensionBeneficiario =
+
             Penben[j] = porcbe_ori[j]; /// new_prc;
             edabe = FechaDv - (Nanbe[j] * 12 + Nmnbe[j]);
-            
-           foreach(var item in beneficiarios)
-           {
-               if (edabe > Fintab)
+
+            foreach (var item in beneficiarios)
+            {
+                if (edabe > Fintab)
                 {
                     msj = "Error Edad es mayor a final de tabla Mortal y menor a 0. ";
                     throw new System.ArgumentException();
@@ -984,7 +984,7 @@ namespace RutinaenC
                     {
                         for (int i = 0; i <= limite - 1; i++)
                         {
-                            
+
                             edalbe = edabe + i;
                             edalbe = (int)amin0(edalbe, Fintab);
                             edacai = edalbe + 1;
@@ -1126,10 +1126,10 @@ namespace RutinaenC
                         }
                     }
                 }
-           }
-            
+            }
+
         }
-        
+
         public void FlujoPensionSupervivencia(List<Beneficiario> beneficiario, double sumaMesesGarantizadoDiferido, beDatosModalidad modeloCotizacion)
         {
             long limiteA = 0;
@@ -1141,201 +1141,201 @@ namespace RutinaenC
                     fqxy[g] = 0;
                     valotemp[g] = 0;
                 }
-                
-                    #region "no titular"
-                    mesesGarantizados = pergar;
-                    if (TipMod == "S") { mesesGarantizados = 0; };
-                    sumaMesesGarantizadoDiferido = mesesDiferidos + mesesGarantizados;
 
-                    Penben[j] = Porcbe[j];
-                    numbep = numbep + 1;
-                    Fechan = Nanbe[j] * 12 + Nmnbe[j];
-                    edabe = Fechap - Fechan;
-                    edaberv = Fechrv - Fechan;
-                    edadedv = FechaDv - Fechan;
+                #region "no titular"
+                mesesGarantizados = pergar;
+                if (TipMod == "S") { mesesGarantizados = 0; };
+                sumaMesesGarantizadoDiferido = mesesDiferidos + mesesGarantizados;
 
-                    if (edabe > Fintab)
+                Penben[j] = Porcbe[j];
+                numbep = numbep + 1;
+                Fechan = Nanbe[j] * 12 + Nmnbe[j];
+                edabe = Fechap - Fechan;
+                edaberv = Fechrv - Fechan;
+                edadedv = FechaDv - Fechan;
+
+                if (edabe > Fintab)
+                {
+                    msj = "Error Edad es mayor a final de tabla Mortal y menor a 0. ";
+                    return ListaResultador;
+                }
+                //'calculo de renta vitalicias
+                if (Ncorbe[j] == 10 || Ncorbe[j] == 11 || Ncorbe[j] == 20 || Ncorbe[j] == 21 || Ncorbe[j] == 41 || Ncorbe[j] == 42 || ((Ncorbe[j] >= 30 && Ncorbe[j] < 40) && (Coinb[j]) != "N"))
+                {
+                    limite = Fintab - edabe - 1;
+                    limite = (long)amax0(sumaMesesGarantizadoDiferido, limite);
+                    nmax = (long)amax0(nmax, limite);
+                    tpx = 1;
+                    for (i = 0; i <= limite; i++)
                     {
-                        msj = "Error Edad es mayor a final de tabla Mortal y menor a 0. ";
-                        return ListaResultador;
-                    }
-                    //'calculo de renta vitalicias
-                    if (Ncorbe[j] == 10 || Ncorbe[j] == 11 || Ncorbe[j] == 20 || Ncorbe[j] == 21 || Ncorbe[j] == 41 || Ncorbe[j] == 42 || ((Ncorbe[j] >= 30 && Ncorbe[j] < 40) && (Coinb[j]) != "N"))
-                    {
-                        limite = Fintab - edabe - 1;
-                        limite = (long)amax0(sumaMesesGarantizadoDiferido, limite);
-                        nmax = (long)amax0(nmax, limite);
-                        tpx = 1;
-                        for (i = 0; i <= limite; i++)
+                        imas1 = i + 1;
+                        edalbe = edabe + i;
+                        edalbe = (int)amin0(edalbe, Fintab);
+                        edacai = edalbe + 1;
+                        edacai = (int)amin0(edacai, Fintab);
+
+                        if (i < mescosto)
                         {
-                            imas1 = i + 1;
-                            edalbe = edabe + i;
-                            edalbe = (int)amin0(edalbe, Fintab);
-                            edacai = edalbe + 1;
-                            edacai = (int)amin0(edacai, Fintab);
-
-                            if (i < mescosto)
+                            tpx = 1;
+                            qxt = 0;
+                            py = 1;
+                            fpy[i] = 1;
+                            fqxy[i] = 1;
+                        }
+                        else
+                        {
+                            if (LxDin[j, edalbe] == 0)
                             {
-                                tpx = 1;
-                                qxt = 0;
-                                py = 1;
-                                fpy[i] = 1;
-                                fqxy[i] = 1;
+                                qxt = 1;
                             }
                             else
                             {
-                                if (LxDin[j, edalbe] == 0)
-                                {
-                                    qxt = 1;
-                                }
-                                else
-                                {
-                                    qxt = (double)(1 - (LxDin[j, edacai] / LxDin[j, edalbe]));
-                                }
+                                qxt = (double)(1 - (LxDin[j, edacai] / LxDin[j, edalbe]));
+                            }
 
-                                if (i == 0)
-                                {
-                                    tpx = 1;
-                                    py = tpx;
-                                }
-                                else
-                                {
-                                    tpx = fpy[i - 1] * (1 - fqxy[i - 1]);
+                            if (i == 0)
+                            {
+                                tpx = 1;
+                                py = tpx;
+                            }
+                            else
+                            {
+                                tpx = fpy[i - 1] * (1 - fqxy[i - 1]);
 
-                                    if (i < ltot)
+                                if (i < ltot)
+                                {
+                                    if (mesesGarantizados > 0)
                                     {
-                                        if (mesesGarantizados > 0)
-                                        {
-                                            py = 1;
-                                        }
-                                        else
-                                        {
-                                            py = tpx;
-                                        }
-                                        //py = 1;
-                                        //tpx = 1;
-                                        //qxt = 0;
+                                        py = 1;
                                     }
                                     else
                                     {
                                         py = tpx;
-                                        if (i >= Mesdif && i < sumaMesesGarantizadoDiferido) { py = 1; };
                                     }
+                                    //py = 1;
+                                    //tpx = 1;
+                                    //qxt = 0;
+                                }
+                                else
+                                {
+                                    py = tpx;
+                                    if (i >= Mesdif && i < sumaMesesGarantizadoDiferido) { py = 1; };
                                 }
                             }
-
-                            fpy[i] = tpx;
-                            fqxy[i] = qxt;
-                            valPY[imas1] = py;
-                            valotemp[imas1] = py * Penben[j] * facgratif[imas1] * vl_FactorReajuste[imas1];
-                            Flupen[imas1] = Flupen[imas1] + py * Penben[j] * facgratif[imas1] * vl_FactorReajuste[imas1];
                         }
-                    }
-                    else
-                    {
-                        if (Ncorbe[j] >= 30 && Ncorbe[j] < 40)
-                        {
-                            if (edaberv > (EdaLim + sumaMesesGarantizadoDiferido) && Coinb[j] == "N")
-                            {
-                                Penben[j] = 0;
 
-                                //ActualizaXMLDET(pathB, j + 1, "PRC_PENSIONSOBDIF", "0")
-                            }
-                            else
+                        fpy[i] = tpx;
+                        fqxy[i] = qxt;
+                        valPY[imas1] = py;
+                        valotemp[imas1] = py * Penben[j] * facgratif[imas1] * vl_FactorReajuste[imas1];
+                        Flupen[imas1] = Flupen[imas1] + py * Penben[j] * facgratif[imas1] * vl_FactorReajuste[imas1];
+                    }
+                }
+                else
+                {
+                    if (Ncorbe[j] >= 30 && Ncorbe[j] < 40)
+                    {
+                        if (edaberv > (EdaLim + sumaMesesGarantizadoDiferido) && Coinb[j] == "N")
+                        {
+                            Penben[j] = 0;
+
+                            //ActualizaXMLDET(pathB, j + 1, "PRC_PENSIONSOBDIF", "0")
+                        }
+                        else
+                        {
+                            mdif = EdaLim - edabe;
+                            //if (edabe < 1) { edabe = 1; };
+                            nmdif = mdif;// -1;
+                            limiteA = nmdif;
+                            limiteA = (long)amax0(sumaMesesGarantizadoDiferido, nmdif);
+                            nmax = (long)amax0(limiteA, nmax);
+                            if (TipMod == "G" && tipoPension == "S")
                             {
-                                mdif = EdaLim - edabe;
-                                //if (edabe < 1) { edabe = 1; };
-                                nmdif = mdif;// -1;
-                                limiteA = nmdif;
                                 limiteA = (long)amax0(sumaMesesGarantizadoDiferido, nmdif);
                                 nmax = (long)amax0(limiteA, nmax);
-                                if (TipMod == "G" && tipoPension == "S")
-                                {
-                                    limiteA = (long)amax0(sumaMesesGarantizadoDiferido, nmdif);
-                                    nmax = (long)amax0(limiteA, nmax);
-                                }
-                                //***
+                            }
+                            //***
 
-                                for (i = 0; i <= limiteA - 1; i++)
+                            for (i = 0; i <= limiteA - 1; i++)
+                            {
+                                imas1 = i + 1;
+                                edalbe = edabe + i;
+                                edacai = edalbe + 1;
+                                edacai = (int)amin0(edacai, Fintab);
+                                if (edalbe < 0)
                                 {
-                                    imas1 = i + 1;
-                                    edalbe = edabe + i;
-                                    edacai = edalbe + 1;
-                                    edacai = (int)amin0(edacai, Fintab);
-                                    if (edalbe < 0)
+                                    edalbe = 1;
+                                    edacai = 1;
+                                    valPY[i] = 0;
+                                    fpy[i] = 1;
+                                    fqxy[i] = 0;
+                                    valotemp[imas1] = 0;
+                                    Flupen[imas1] = Flupen[imas1] + 0;
+                                }
+                                else
+                                {
+                                    if (i < mescosto)
                                     {
-                                        edalbe = 1;
-                                        edacai = 1;
-                                        valPY[i] = 0;
+                                        tpx = 1;
+                                        qxt = 0;
+                                        py = 1;
                                         fpy[i] = 1;
-                                        fqxy[i] = 0;
-                                        valotemp[imas1] = 0;
-                                        Flupen[imas1] = Flupen[imas1] + 0;
+                                        fqxy[i] = 1;
                                     }
                                     else
                                     {
-                                        if (i < mescosto)
+                                        //qxt = 1 - (Ly[nsbe, nibe, edacai] / Ly[nsbe, nibe, edalbe]);
+                                        qxt = (double)(1 - (LxDin[j, edacai] / LxDin[j, edalbe]));
+                                        if (i == 0)
                                         {
                                             tpx = 1;
-                                            qxt = 0;
-                                            py = 1;
-                                            fpy[i] = 1;
-                                            fqxy[i] = 1;
+                                            py = tpx;
                                         }
                                         else
                                         {
-                                            //qxt = 1 - (Ly[nsbe, nibe, edacai] / Ly[nsbe, nibe, edalbe]);
-                                            qxt = (double)(1 - (LxDin[j, edacai] / LxDin[j, edalbe]));
-                                            if (i == 0)
-                                            {
-                                                tpx = 1;
-                                                py = tpx;
-                                            }
-                                            else
-                                            {
-                                                tpx = fpy[i - 1] * (1 - fqxy[i - 1]);
+                                            tpx = fpy[i - 1] * (1 - fqxy[i - 1]);
 
-                                                if (i < ltot)
+                                            if (i < ltot)
+                                            {
+                                                if (mesesGarantizados > 0)
                                                 {
-                                                    if (mesesGarantizados > 0)
-                                                    {
-                                                        py = 1;
-                                                    }
-                                                    else
-                                                    {
-                                                        py = tpx;
-                                                    }
-                                                    //py = 1;
-                                                    //tpx = 1;
-                                                    //qxt = 0;
+                                                    py = 1;
                                                 }
                                                 else
                                                 {
                                                     py = tpx;
-                                                    if (swg == "S" && i < sumaMesesGarantizadoDiferido) { py = 1; }
-                                                    if (i < sumaMesesGarantizadoDiferido) { py = 1; }
-                                                    if (i < mesesDiferidos) { py = 0; }
-
                                                 }
+                                                //py = 1;
+                                                //tpx = 1;
+                                                //qxt = 0;
+                                            }
+                                            else
+                                            {
+                                                py = tpx;
+                                                if (swg == "S" && i < sumaMesesGarantizadoDiferido) { py = 1; }
+                                                if (i < sumaMesesGarantizadoDiferido) { py = 1; }
+                                                if (i < mesesDiferidos) { py = 0; }
+
                                             }
                                         }
-                                        valPY[i] = py;
-                                        fpy[i] = tpx;
-                                        fqxy[i] = qxt;
-                                        valotemp[imas1] = py * Penben[j] * facgratif[imas1] * vl_FactorReajuste[imas1];
-                                        Flupen[imas1] = Flupen[imas1] + py * Penben[j] * facgratif[imas1] * vl_FactorReajuste[imas1];
                                     }
+                                    valPY[i] = py;
+                                    fpy[i] = tpx;
+                                    fqxy[i] = qxt;
+                                    valotemp[imas1] = py * Penben[j] * facgratif[imas1] * vl_FactorReajuste[imas1];
+                                    Flupen[imas1] = Flupen[imas1] + py * Penben[j] * facgratif[imas1] * vl_FactorReajuste[imas1];
                                 }
                             }
                         }
                     }
-                    #endregion
-                
                 }
+                #endregion
+
+            }
         }
-      
-        #endregion 
-    
+
+        #endregion
+
         // public void CalcularTasaVenta(beDatosTasasPar tasa)
         // {
         //    double tasatirc;
@@ -2146,23 +2146,23 @@ namespace RutinaenC
         // }
 
         #region FuncionesPropias
-      
+
         public double ObtenerMinimoMaximo(List<double> valores, string tipo)
         {
             return tipo == "MIN" ? valores.Min() : valores.Max();
         }
 
         #endregion
-       
+
         #region Funciones Auxiliares
-        
+
         /// <summary>
         /// Josué Gutierrez / Antonio Quezada
         /// 2019-08-13
         /// Actualiza las variables meses diferidos, meses garantizados y meses costo
         /// </summary>
         /// <param name="modeloCotizacion"> Modalidad </param>
-       
+
         public void ObtenerMesesCotizacion(beDatosModalidad modeloCotizacion)
         {
             int aniosFechaCotizacion = Convert.ToInt32(modeloCotizacion.FecCot.Substring(0, 4));
@@ -2176,16 +2176,16 @@ namespace RutinaenC
             mesesCosto = ((aniosFechaCotizacion * 12) + mesesFechaCotizacion) - ((aniosFechaDevengue * 12) + mesesFechaDevengue);
 
             if (mesesCosto < 0) { mesesCosto = 0; }
-            if (mesesCosto > mesesDiferidos){ mesesDiferidos = 0; }
-           
+            if (mesesCosto > mesesDiferidos) { mesesDiferidos = 0; }
+
             //OBTIENE LOS MESESCOSTOS
             if (mesesCosto > (mesesDiferidos + mesesGarantizados))
                 mesesCosto = mesesCosto - (mesesDiferidos + mesesGarantizados);
-            
+
             //'Periodo Diferido
             if (mesesDiferidos == mesesCosto)
                 mesesDiferidos = (mesesCosto - mesesDiferidos);
-            
+
             //'Periodo Garantizado
             if (mesesCosto > (mesesDiferidos + mesesGarantizados))
             {
@@ -2198,7 +2198,7 @@ namespace RutinaenC
                     mesesGarantizados = (mesesDiferidos + mesesGarantizados);
                 }
             }
-               
+
         }
 
         /// <summary>
@@ -2208,7 +2208,7 @@ namespace RutinaenC
         /// </summary>
         /// <param name="modeloCotizacion"> Modalidad </param>
         /// <returns> Regresa una lista que contiene la información de la Gratificación </returns>
-       
+
         public List<int> ObtenerGratificacion(beDatosModalidad modeloCotizacion)
         {
             List<int> gratificacion = new List<int>();
