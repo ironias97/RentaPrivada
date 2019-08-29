@@ -981,7 +981,7 @@ namespace RutinaenC
             double porcentajePension;
             double tpx;
             double qxt;
-            double py;
+            double py  = 0;
             double flujoPension;
             double fpy = 0;
             double fqxy = 0;
@@ -996,6 +996,7 @@ namespace RutinaenC
             int limite;
             int contador;
             int codigoParentesco;
+            int mesesDiferencia;
 
             List<double> valores = new List<double>(); // Lista para obtener el valor mínimo o máximo
             List<double> flujosMesesConsumidos = new List<double>();
@@ -1087,113 +1088,128 @@ namespace RutinaenC
                 }
                 else
                 {
-
-                }
-
-            }
-            
-                if ( codigoParentesco == 30 && edadMesesDevengue <= edadLimite)
-                {
-                    
-                    mdif = EdaLim - edadMesesDevengue;
-                    if (edadMesesDevengue < 1) { edadMesesDevengue = 1; };
-                    nmdif = mdif;
-                    limite2 = finMortalidad - edadPensionado;
-                    limite = (long)amin0(nmdif, limite2) - 1;
-                    nmax = (long)amax0(nmax, limite);
-
-                    try
+                    if ( codigoParentesco == 30 && edadMesesDevengue <= edadLimite)
                     {
-                        for (i = 0; i <= mdif - 1; i++)
-                        {
-                            imas1 = i + 1;
-                            edalbe = edadMesesDevengue + i;
-                            edacai = edalbe + 1;
-                            edacai = (int)amin0(edacai, finMortalidad);
+                        mesesDiferencia = edadLimite - edadMesesDevengue;
+                        if (edadMesesDevengue < 1) { edadMesesDevengue = 1; };
 
-                            if (edalbe < 0)
+                        try
+                        {
+                            for (int i = 0; i <= mesesDiferencia - 1; i++)
                             {
-                                edalbe = 1;
-                                edacai = 1;
-                                valPY[i] = 0;
-                                fpy[i] = 1;
-                                fqxy[i] = 0;
-                                valotemp[imas1] = 0;
-                                Flupen[imas1] = Flupen[imas1] + 0;
-                            }
-                            else
-                            {
-                                if (i < mescosto)
+                                contador = i + 1;
+                                edadMesesDevengueLimite = edadMesesDevengue + i;
+                                edadMesesDevengueAux = edadMesesDevengueLimite + 1;
+
+                                valores.Add(edadMesesDevengueAux);
+                                valores.Add(finMortalidad);
+
+                                edadMesesDevengueAux = Convert.ToInt32(ObtenerMinimoMaximo(valores, "MIN"));
+                                valores.Clear(); // Se vacía la lista para futuras comparaciones
+                                
+                                if (i < mesesCosto)
                                 {
                                     tpx = 1;
                                     qxt = 0;
                                     py = 0;
-                                    fpy[i] = 1;
-                                    fqxy[i] = 1;
+                                    fpy = 1;
+                                    fqxy = 1;
                                 }
                                 else
                                 {
-                                    //qxt = 1 - (Ly[nsbe, nibe, edacai] / Ly[nsbe, nibe, edalbe]);
-                                    qxt = (double)(1 - (LxDin[j, edacai] / LxDin[j, edalbe]));
+                                    lxDinAux = (from m in tablasMortalidad where m.IdBeneficiario == item.IdBeneficiario && m.Mes == edadMesesDevengueAux select m.LxDin).FirstOrDefault();
+                                    lxDinLimite = (from m in tablasMortalidad where m.IdBeneficiario == item.IdBeneficiario && m.Mes == edadMesesDevengueLimite select m.LxDin).FirstOrDefault();
+
+                                    qxt = (double)(1 - (lxDinAux / lxDinLimite));
                                     if (i == 0)
                                     {
                                         tpx = 1;
                                     }
                                     else
                                     {
-                                        tpx = fpy[i - 1] * (1 - fqxy[i - 1]);
-
-                                        if (i < ltot)
-                                        {
-                                            py = 0;
-                                        }
-                                        else
-                                        {
-                                            py = tpx;
-                                        }
+                                        tpx = fpy * (1 - fqxy);
+                                        py = (i < limiteTotal) ? 0 : tpx;
                                     }
-
+                                    fpy = tpx;
+                                    fqxy = qxt;
+                                    flujoPension = py * (1 - fpx[contador]) * gratificacion[contador] * porcentajePension * factorReajuste[contador] * flujoTramos[contador];
+                                    flujosPension[contador] = flujosPension[contador] + flujoPension;
                                 }
-                                fpy[i] = tpx;
-                                fqxy[i] = qxt;
-                                valotemp[imas1] = py * (1 - fpx[imas1]) * facgratif[imas1] * Penben[j] * vl_FactorReajuste[imas1] * fTramos[imas1];
-                                Flupen[imas1] = Flupen[imas1] + valotemp[imas1];
+                                
                             }
                         }
-                    }
-                    catch (Exception ex)
-                    {
-                        msj = "Problemas en los Flujos de hijos Sanos de la Rutina. ";
-                        return ListaResultador;
+                        catch (System.Exception)
+                        {
+                            Mensaje = "Problemas en los Flujos de hijos Sanos de la Rutina. ";
+                            throw;
+                        }
                     }
                 }
-                
-            
-
+            }
         }
 
-        public void FlujoPensionSupervivencia(List<Beneficiario> beneficiario, double sumaMesesGarantizadoDiferido, beDatosModalidad modeloCotizacion)
+        public void FlujoPensionSupervivencia(List<Beneficiario> beneficiarios, beDatosModalidad modeloCotizacion, List<Mortalidad> tablasMortalidad, List<int> gratificacion, List<double> factorReajuste,  List<double> flujoTramos, ref List<double> fpx, ref List<double> flujosPension)
         {
-            long limiteA = 0;
-            for (j = 0; j <= Nben; j++)
-            {
-                for (long g = 0; g <= 1332; g++)
-                {
-                    fpy[g] = 0;
-                    fqxy[g] = 0;
-                    valotemp[g] = 0;
-                }
+            string indiceCobertura = modeloCotizacion.IndCob;
+            string tipoPension = modeloCotizacion.Tippen;
+            string tipoRenta = modeloCotizacion.TipRen;
+            string tipoModalidad = modeloCotizacion.TipMod;
 
-                #region "no titular"
-                mesesGarantizados = pergar;
-                if (TipMod == "S") { mesesGarantizados = 0; };
+            int aniosFechaDevengue = Convert.ToInt32(modeloCotizacion.FecDev.Substring(0, 4));
+            int mesesFechaDevengue = Convert.ToInt32(modeloCotizacion.FecDev.Substring(4, 2));
+            int mesesDevengue = aniosFechaDevengue * 12 + mesesFechaDevengue;
+            int mesesRentaVitalicia = mesesDevengue + mesesDiferidos;
+            int finMortalidad = modeloCotizacion.FinTab;
+            int edadLimite = modeloCotizacion.EdaLim;
+
+            int sumaMesesGarantizadoDiferido = mesesDiferidos + mesesGarantizados;
+
+            int limiteTotal = tipoRenta == "E" ? mesesGarantizados : sumaMesesGarantizadoDiferido;
+            int limiteTotalGastoSepelio = tipoRenta == "E" ? 0 : mesesDiferidos;
+
+            double gastoFunerario = modeloCotizacion.MtoGS;
+
+            double porcentajePension;
+            double tpx;
+            double qxt;
+            double py  = 0;
+            double flujoPension;
+            double fpy = 0;
+            double fqxy = 0;
+
+            decimal lxDinAux;
+            decimal lxDinLimite;
+
+            int mesesNacimiento;
+            int edadMesesDevengue;
+            int edadMesesDevengueLimite;
+            int edadMesesDevengueAux;
+            int edadMesesRentaVitalicia;
+            int limite;
+            int contador;
+            int codigoParentesco;
+            int mesesDiferencia;
+            
+
+            List<double> valores = new List<double>(); // Lista para obtener el valor mínimo o máximo
+            List<double> flujosMesesConsumidos = new List<double>();
+
+            foreach (var item in beneficiarios)
+            {   
+                codigoParentesco = Convert.ToInt32(item.CodigoParentesco);
+                mesesNacimiento = item.AniosFechaNacimiento * 12 + item.MesesFechaNacimiento;
+                porcentajePension = item.PorcentajeLegal;
+                edadMesesDevengue = mesesDevengue - mesesNacimiento;
+                edadMesesRentaVitalicia = mesesRentaVitalicia - mesesNacimiento;
+
+                if (tipoModalidad == "S") { mesesGarantizados = 0; };
                 sumaMesesGarantizadoDiferido = mesesDiferidos + mesesGarantizados;
 
-                Penben[j] = Porcbe[j];
-                Fechan = Nanbe[j] * 12 + Nmnbe[j];
-                edadMesesDevengue = Fechap - Fechan;
-                edaberv = Fechrv - Fechan;
-                edadedv = mesesDevengue - Fechan;
+            }
+
+            for (j = 0; j <= Nben; j++)
+            {
+                #region "no titular"
 
                 if (edadMesesDevengue > finMortalidad)
                 {
@@ -1269,9 +1285,8 @@ namespace RutinaenC
 
                         fpy[i] = tpx;
                         fqxy[i] = qxt;
-                        valPY[imas1] = py;
                         valotemp[imas1] = py * Penben[j] * facgratif[imas1] * vl_FactorReajuste[imas1];
-                        Flupen[imas1] = Flupen[imas1] + py * Penben[j] * facgratif[imas1] * vl_FactorReajuste[imas1];
+                        flujosPension[imas1] = flujosPension[imas1] + py * Penben[j] * facgratif[imas1] * vl_FactorReajuste[imas1];
                     }
                 }
                 else
@@ -1309,11 +1324,10 @@ namespace RutinaenC
                                 {
                                     edalbe = 1;
                                     edacai = 1;
-                                    valPY[i] = 0;
                                     fpy[i] = 1;
                                     fqxy[i] = 0;
                                     valotemp[imas1] = 0;
-                                    Flupen[imas1] = Flupen[imas1] + 0;
+                                    flujosPension[imas1] = flujosPension[imas1] + 0;
                                 }
                                 else
                                 {
@@ -1362,11 +1376,10 @@ namespace RutinaenC
                                             }
                                         }
                                     }
-                                    valPY[i] = py;
                                     fpy[i] = tpx;
                                     fqxy[i] = qxt;
                                     valotemp[imas1] = py * Penben[j] * facgratif[imas1] * vl_FactorReajuste[imas1];
-                                    Flupen[imas1] = Flupen[imas1] + py * Penben[j] * facgratif[imas1] * vl_FactorReajuste[imas1];
+                                    flujosPension[imas1] = flujosPension[imas1] + py * Penben[j] * facgratif[imas1] * vl_FactorReajuste[imas1];
                                 }
                             }
                         }
@@ -1412,16 +1425,16 @@ namespace RutinaenC
         //    {
         //        if (i <= mescosto + 1)
         //        {
-        //            fcru[i] = Flupen[i] * Math.Pow((1 / (1 + tasaVentamax)), (0));
+        //            fcru[i] = flujosPension[i] * Math.Pow((1 / (1 + tasaVentamax)), (0));
         //            vppen = vppen + fcru[i];
         //        }
         //        else
         //        {
         //            // CRU PENSION
-        //            fcru[i] = Flupen[i] * Math.Pow((1 / (1 + tasaVentamax)), (cr));
+        //            fcru[i] = flujosPension[i] * Math.Pow((1 / (1 + tasaVentamax)), (cr));
         //            vppen = vppen + fcru[i];
-        //            vppenres = vppenres + Flupen[i] / Math.Pow((1 + tce), (cr));
-        //            //vppenres = vppenres + Flupen[i] * Math.Pow((1 / (1 + tce)), (cr));
+        //            vppenres = vppenres + flujosPension[i] / Math.Pow((1 + tce), (cr));
+        //            //vppenres = vppenres + flujosPension[i] * Math.Pow((1 / (1 + tce)), (cr));
 
         //            // CRU GS
         //            fcruGS[i] = Flucm[i] * Math.Pow((1 / (1 + tasaVentamax)), (cr - 0.5));
@@ -1611,15 +1624,15 @@ namespace RutinaenC
         //    //TRAE RESERVAS DE MESES CONSUMIDOS
         //    for (int a = 0; a <= mescosto + 1; a++)
         //    {
-        //        dflupag = dflupag + (penanu * Flupen[a] + Flucm[a]);/// (Math.Pow((1 + tce), a)));
+        //        dflupag = dflupag + (penanu * flujosPension[a] + Flucm[a]);/// (Math.Pow((1 + tce), a)));
         //    }
         //    //TRAE RESERVAS
         //    at = 1;
         //    for (int a = (int)mescosto + 1; a <= nmax; a++)
         //    {
-        //        resfin = resfin + ((penanu * Flupen[a + 1] + Flucm[a + 1]) / (Math.Pow((1 + tce), at)));
+        //        resfin = resfin + ((penanu * flujosPension[a + 1] + Flucm[a + 1]) / (Math.Pow((1 + tce), at)));
         //        at = at + 1;
-        //        //dflupag = dflupag + (penanu * Flupen[a] + Flucm[a]);/// (Math.Pow((1 + tce), a)));
+        //        //dflupag = dflupag + (penanu * flujosPension[a] + Flucm[a]);/// (Math.Pow((1 + tce), a)));
         //    }
         //    reserva = resfin + dflupag;
 
@@ -1650,10 +1663,10 @@ namespace RutinaenC
         //        //{ 
         //        //    iRes = i; 
         //        //}
-        //        flupag = penanu * Flupen[iRes] + Flucm[iRes];
+        //        flupag = penanu * flujosPension[iRes] + Flucm[iRes];
         //        for (long a = iRes; a <= nmax; a++)
         //        {
-        //            resfin = resfin + ((penanu * Flupen[a + 1] + Flucm[a + 1]) / (Math.Pow((1 + tce), at)));
+        //            resfin = resfin + ((penanu * flujosPension[a + 1] + Flucm[a + 1]) / (Math.Pow((1 + tce), at)));
         //            at = at + 1;
         //        }
         //        resfin = flupag + resfin;
@@ -1750,12 +1763,12 @@ namespace RutinaenC
         //        //{
         //        //    if (i <= mescosto + 1)
         //        //    {
-        //        //        fcru[i] = Flupen[i] * Math.Pow((1 / (1 + TTirMax)), (0));
+        //        //        fcru[i] = flujosPension[i] * Math.Pow((1 / (1 + TTirMax)), (0));
         //        //        vppen = vppen + fcru[i];
         //        //    }
         //        //    else
         //        //    {
-        //        //        fcru[i] = Flupen[i] * Math.Pow((1 / (1 + TTirMax)), (cr));
+        //        //        fcru[i] = flujosPension[i] * Math.Pow((1 / (1 + TTirMax)), (cr));
         //        //        vppen = vppen + fcru[i];
         //        //        vpcm = vpcm + Flucm[i] / Math.Pow((1 + TTirMax), (cr - 0.5));
         //        //        cr = cr + 1;
@@ -1794,13 +1807,13 @@ namespace RutinaenC
         //    {
         //        if (i <= mescosto + 1)
         //        {
-        //            fcru[i] = Flupen[i] * Math.Pow((1 / (1 + tasaVentamax)), (0));
+        //            fcru[i] = flujosPension[i] * Math.Pow((1 / (1 + tasaVentamax)), (0));
         //            vppen = vppen + fcru[i];
         //        }
         //        else
         //        {
         //            // CRU PENSION
-        //            fcru[i] = Flupen[i] * Math.Pow((1 / (1 + tasaVentamax)), (cr));
+        //            fcru[i] = flujosPension[i] * Math.Pow((1 / (1 + tasaVentamax)), (cr));
         //            vppen = vppen + fcru[i];
 
         //            // CRU GS
@@ -2003,7 +2016,7 @@ namespace RutinaenC
         //        {
         //            if (i < mescosto)
         //            {
-        //                //vpte2 = vpte2 + ((Flupen[i + 1] * penanu) / 1);
+        //                //vpte2 = vpte2 + ((flujosPension[i + 1] * penanu) / 1);
         //            }
         //            else
         //            {
@@ -2011,9 +2024,9 @@ namespace RutinaenC
         //                {
         //                    r = 1;
         //                }
-        //                fpagosRes[cr] = (Flupen[i + 1] * penanu + Flucm[i + 1]) / Math.Pow((1 + Tasa), cr);
-        //                vpte = vpte + ((Flupen[i + 1] * penanu + Flucm[i + 1]) / Math.Pow((1 + Tasa), cr));
-        //                vpte2 = vpte2 + (((Flupen[i + 1] * penanu) + Flucm[i + 1]) / factual[cr]);
+        //                fpagosRes[cr] = (flujosPension[i + 1] * penanu + Flucm[i + 1]) / Math.Pow((1 + Tasa), cr);
+        //                vpte = vpte + ((flujosPension[i + 1] * penanu + Flucm[i + 1]) / Math.Pow((1 + Tasa), cr));
+        //                vpte2 = vpte2 + (((flujosPension[i + 1] * penanu) + Flucm[i + 1]) / factual[cr]);
         //                cr = cr + 1;
         //            }
         //        }
@@ -2045,17 +2058,17 @@ namespace RutinaenC
         //    //TRAE RESERVAS DE MESES CONSUMIDOS
         //    for (int a = 0; a <= mescosto + 1; a++)
         //    {
-        //        dflupag = dflupag + (penanu * Flupen[a] + Flucm[a]);// / (Math.Pow((1 + tce), a)));
+        //        dflupag = dflupag + (penanu * flujosPension[a] + Flucm[a]);// / (Math.Pow((1 + tce), a)));
         //    }
 
         //    //TRAE RESERVAS
         //    at = 1;
         //    for (int a = (int)mescosto + 1; a <= nmax; a++)
         //    {
-        //        fpagosRes[at] = (penanu * Flupen[a + 1] + Flucm[a + 1]);
-        //        resfin = resfin + ((penanu * Flupen[a + 1] + Flucm[a + 1]) / (Math.Pow((1 + tce), at)));
+        //        fpagosRes[at] = (penanu * flujosPension[a + 1] + Flucm[a + 1]);
+        //        resfin = resfin + ((penanu * flujosPension[a + 1] + Flucm[a + 1]) / (Math.Pow((1 + tce), at)));
         //        at = at + 1;
-        //        //dflupag = dflupag + (penanu * Flupen[a] + Flucm[a]);/// (Math.Pow((1 + tce), a)));
+        //        //dflupag = dflupag + (penanu * flujosPension[a] + Flucm[a]);/// (Math.Pow((1 + tce), a)));
         //    }
         //    reserva = resfin + dflupag;
         //    //reserva = penanu * (vppenres) + vpcmres + dflupag;
@@ -2095,10 +2108,10 @@ namespace RutinaenC
         //        at = 1;
         //        iRes = i + mescosto;
         //        if (iRes == 1332) { goto CalSalExd; }
-        //        flupag = penanu * Flupen[iRes] + Flucm[iRes];
+        //        flupag = penanu * flujosPension[iRes] + Flucm[iRes];
         //        for (long a = iRes; a <= nmax; a++)
         //        {
-        //            resfin = resfin + ((penanu * Flupen[a + 1] + Flucm[a + 1]) / (Math.Pow((1 + tce), at)));
+        //            resfin = resfin + ((penanu * flujosPension[a + 1] + Flucm[a + 1]) / (Math.Pow((1 + tce), at)));
         //            at = at + 1;
         //        }
         //        resfin = flupag + resfin;
