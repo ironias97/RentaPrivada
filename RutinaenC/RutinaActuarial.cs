@@ -1205,186 +1205,187 @@ namespace RutinaenC
                 if (tipoModalidad == "S") { mesesGarantizados = 0; };
                 sumaMesesGarantizadoDiferido = mesesDiferidos + mesesGarantizados;
 
+                if (edadMesesDevengue <= 0 || edadMesesDevengue > finMortalidad)
+                {
+                    Mensaje = "Error Edad es mayor a final de tabla Mortal y menor a 0.";
+                    throw new System.ArgumentException();
+                }
+                
+                if (codigoParentesco == 10 || codigoParentesco == 11 || codigoParentesco == 20 ||
+                    codigoParentesco == 21 || codigoParentesco == 41 || codigoParentesco == 42 ||
+                    (codigoParentesco == 30 && item.TipoInvalidez != "N"))
+                {
+                    limite = finMortalidad - edadMesesDevengue - 1;
+                    
+                    valores.Add(limite);
+                    valores.Add(sumaMesesGarantizadoDiferido);
+
+                    limite = Convert.ToInt32(ObtenerMinimoMaximo(valores, "MAX"));
+
+                    valores.Clear();
+
+                    for (int i = 0; i < limite; i++)
+                    {
+                        contador = i + 1;
+                        edadMesesDevengueLimite = edadMesesDevengue + i;
+                        
+                        valores.Add(edadMesesDevengue);
+                        valores.Add(finMortalidad);
+
+                        edadMesesDevengueLimite = Convert.ToInt32(ObtenerMinimoMaximo(valores, "MIN"));
+
+                        valores.Clear();
+
+                        edadMesesDevengueAux = edadMesesDevengueLimite + 1;
+
+                        valores.Add(edadMesesDevengueAux);
+                        valores.Add(finMortalidad);
+
+                        edadMesesDevengueAux = Convert.ToInt32(ObtenerMinimoMaximo(valores, "MIN"));
+
+                        valores.Clear();
+
+                        if( i < mesesCosto)
+                        {
+                            tpx = 1;
+                            qxt = 0;
+                            py = 1;
+                            fpy = 1;
+                            fqxy = 1;
+                        }
+                        else
+                        {
+                            lxDinAux = (from m in tablasMortalidad where m.IdBeneficiario == item.IdBeneficiario && m.Mes == edadMesesDevengueAux select m.LxDin).FirstOrDefault();
+                            lxDinLimite = (from m in tablasMortalidad where m.IdBeneficiario == item.IdBeneficiario && m.Mes == edadMesesDevengueLimite select m.LxDin).FirstOrDefault();
+
+                            qxt = lxDinLimite == 0 ? 1 : Convert.ToDouble((1 - (lxDinAux / lxDinLimite)));
+                            if (i == 0)
+                            {
+                                tpx = 1;
+                                py = 1;
+                            }
+                            else
+                            {
+                                tpx = fpy * (1 - fqxy);
+                                py = ((i < limiteTotal && mesesGarantizados > 0) || (i >= mesesDiferidos && i < sumaMesesGarantizadoDiferido)) ? 1: tpx;
+                            }
+                            fpy = tpx;
+                            fqxy = qxt;
+                            flujoPension = py * gratificacion[contador] * porcentajePension * factorReajuste[contador];
+                            flujosPension[contador] = flujosPension[contador] + flujoPension;
+                        }
+                    }
+                }
+                else
+                {
+                    if(codigoParentesco == 30)
+                    {
+                        if(edadMesesRentaVitalicia > (edadLimite + sumaMesesGarantizadoDiferido) && item.TipoInvalidez == "N")
+                        {
+                            porcentajePension = 0;
+                        }
+                    }
+                }
             }
 
             for (j = 0; j <= Nben; j++)
             {
                 #region "no titular"
 
-                if (edadMesesDevengue > finMortalidad)
+                if (codigoParentesco >= 30 && codigoParentesco < 40)
                 {
-                    msj = "Error Edad es mayor a final de tabla Mortal y menor a 0. ";
-                    return ListaResultador;
-                }
-                //'calculo de renta vitalicias
-                if (codigoParentesco == 10 || codigoParentesco == 11 || codigoParentesco == 20 ||
-                    codigoParentesco == 21 || codigoParentesco == 41 || codigoParentesco == 42 ||
-                    ((codigoParentesco >= 30 && codigoParentesco < 40) && (Coinb[j]) != "N"))
-                {
-                    limite = finMortalidad - edadMesesDevengue - 1;
-                    limite = (long)amax0(sumaMesesGarantizadoDiferido, limite);
-                    nmax = (long)amax0(nmax, limite);
-                    tpx = 1;
-                    for (i = 0; i <= limite; i++)
+                    if (edaberv > (EdaLim + sumaMesesGarantizadoDiferido) &&  == "N")
                     {
-                        imas1 = i + 1;
-                        edalbe = edadMesesDevengue + i;
-                        edalbe = (int)amin0(edalbe, finMortalidad);
-                        edacai = edalbe + 1;
-                        edacai = (int)amin0(edacai, finMortalidad);
+                        Penben[j] = 0;
 
-                        if (i < mescosto)
-                        {
-                            tpx = 1;
-                            qxt = 0;
-                            py = 1;
-                            fpy[i] = 1;
-                            fqxy[i] = 1;
-                        }
-                        else
-                        {
-                            if (LxDin[j, edalbe] == 0)
-                            {
-                                qxt = 1;
-                            }
-                            else
-                            {
-                                qxt = (double)(1 - (LxDin[j, edacai] / LxDin[j, edalbe]));
-                            }
-
-                            if (i == 0)
-                            {
-                                tpx = 1;
-                                py = tpx;
-                            }
-                            else
-                            {
-                                tpx = fpy[i - 1] * (1 - fqxy[i - 1]);
-
-                                if (i < ltot)
-                                {
-                                    if (mesesGarantizados > 0)
-                                    {
-                                        py = 1;
-                                    }
-                                    else
-                                    {
-                                        py = tpx;
-                                    }
-                                    //py = 1;
-                                    //tpx = 1;
-                                    //qxt = 0;
-                                }
-                                else
-                                {
-                                    py = tpx;
-                                    if (i >= Mesdif && i < sumaMesesGarantizadoDiferido) { py = 1; };
-                                }
-                            }
-                        }
-
-                        fpy[i] = tpx;
-                        fqxy[i] = qxt;
-                        valotemp[imas1] = py * Penben[j] * facgratif[imas1] * vl_FactorReajuste[imas1];
-                        flujosPension[imas1] = flujosPension[imas1] + py * Penben[j] * facgratif[imas1] * vl_FactorReajuste[imas1];
+                        //ActualizaXMLDET(pathB, j + 1, "PRC_PENSIONSOBDIF", "0")
                     }
-                }
-                else
-                {
-                    if (codigoParentesco >= 30 && codigoParentesco < 40)
+                    else
                     {
-                        if (edaberv > (EdaLim + sumaMesesGarantizadoDiferido) && Coinb[j] == "N")
+                        mdif = EdaLim - edadMesesDevengue;
+                        //if (edadMesesDevengue < 1) { edadMesesDevengue = 1; };
+                        nmdif = mdif;// -1;
+                        limiteA = nmdif;
+                        limiteA = (long)amax0(sumaMesesGarantizadoDiferido, nmdif);
+                        nmax = (long)amax0(limiteA, nmax);
+                        if (TipMod == "G" && tipoPension == "S")
                         {
-                            Penben[j] = 0;
-
-                            //ActualizaXMLDET(pathB, j + 1, "PRC_PENSIONSOBDIF", "0")
-                        }
-                        else
-                        {
-                            mdif = EdaLim - edadMesesDevengue;
-                            //if (edadMesesDevengue < 1) { edadMesesDevengue = 1; };
-                            nmdif = mdif;// -1;
-                            limiteA = nmdif;
                             limiteA = (long)amax0(sumaMesesGarantizadoDiferido, nmdif);
                             nmax = (long)amax0(limiteA, nmax);
-                            if (TipMod == "G" && tipoPension == "S")
-                            {
-                                limiteA = (long)amax0(sumaMesesGarantizadoDiferido, nmdif);
-                                nmax = (long)amax0(limiteA, nmax);
-                            }
-                            //***
+                        }
+                        //***
 
-                            for (i = 0; i <= limiteA - 1; i++)
+                        for (i = 0; i <= limiteA - 1; i++)
+                        {
+                            imas1 = i + 1;
+                            edalbe = edadMesesDevengue + i;
+                            edacai = edalbe + 1;
+                            edacai = (int)amin0(edacai, finMortalidad);
+                            if (edalbe < 0)
                             {
-                                imas1 = i + 1;
-                                edalbe = edadMesesDevengue + i;
-                                edacai = edalbe + 1;
-                                edacai = (int)amin0(edacai, finMortalidad);
-                                if (edalbe < 0)
+                                edalbe = 1;
+                                edacai = 1;
+                                fpy[i] = 1;
+                                fqxy[i] = 0;
+                                valotemp[imas1] = 0;
+                                flujosPension[imas1] = flujosPension[imas1] + 0;
+                            }
+                            else
+                            {
+                                if (i < mescosto)
                                 {
-                                    edalbe = 1;
-                                    edacai = 1;
+                                    tpx = 1;
+                                    qxt = 0;
+                                    py = 1;
                                     fpy[i] = 1;
-                                    fqxy[i] = 0;
-                                    valotemp[imas1] = 0;
-                                    flujosPension[imas1] = flujosPension[imas1] + 0;
+                                    fqxy[i] = 1;
                                 }
                                 else
                                 {
-                                    if (i < mescosto)
+                                    //qxt = 1 - (Ly[nsbe, nibe, edacai] / Ly[nsbe, nibe, edalbe]);
+                                    qxt = (double)(1 - (LxDin[j, edacai] / LxDin[j, edalbe]));
+                                    if (i == 0)
                                     {
                                         tpx = 1;
-                                        qxt = 0;
-                                        py = 1;
-                                        fpy[i] = 1;
-                                        fqxy[i] = 1;
+                                        py = tpx;
                                     }
                                     else
                                     {
-                                        //qxt = 1 - (Ly[nsbe, nibe, edacai] / Ly[nsbe, nibe, edalbe]);
-                                        qxt = (double)(1 - (LxDin[j, edacai] / LxDin[j, edalbe]));
-                                        if (i == 0)
-                                        {
-                                            tpx = 1;
-                                            py = tpx;
-                                        }
-                                        else
-                                        {
-                                            tpx = fpy[i - 1] * (1 - fqxy[i - 1]);
+                                        tpx = fpy[i - 1] * (1 - fqxy[i - 1]);
 
-                                            if (i < ltot)
+                                        if (i < ltot)
+                                        {
+                                            if (mesesGarantizados > 0)
                                             {
-                                                if (mesesGarantizados > 0)
-                                                {
-                                                    py = 1;
-                                                }
-                                                else
-                                                {
-                                                    py = tpx;
-                                                }
-                                                //py = 1;
-                                                //tpx = 1;
-                                                //qxt = 0;
+                                                py = 1;
                                             }
                                             else
                                             {
                                                 py = tpx;
-                                                if (swg == "S" && i < sumaMesesGarantizadoDiferido) { py = 1; }
-                                                if (i < sumaMesesGarantizadoDiferido) { py = 1; }
-                                                if (i < mesesDiferidos) { py = 0; }
-
                                             }
+                                            //py = 1;
+                                            //tpx = 1;
+                                            //qxt = 0;
+                                        }
+                                        else
+                                        {
+                                            py = tpx;
+                                            if (swg == "S" && i < sumaMesesGarantizadoDiferido) { py = 1; }
+                                            if (i < sumaMesesGarantizadoDiferido) { py = 1; }
+                                            if (i < mesesDiferidos) { py = 0; }
+
                                         }
                                     }
-                                    fpy[i] = tpx;
-                                    fqxy[i] = qxt;
-                                    valotemp[imas1] = py * Penben[j] * facgratif[imas1] * vl_FactorReajuste[imas1];
-                                    flujosPension[imas1] = flujosPension[imas1] + py * Penben[j] * facgratif[imas1] * vl_FactorReajuste[imas1];
                                 }
+                                fpy[i] = tpx;
+                                fqxy[i] = qxt;
+                                valotemp[imas1] = py * Penben[j] * facgratif[imas1] * vl_FactorReajuste[imas1];
+                                flujosPension[imas1] = flujosPension[imas1] + py * Penben[j] * facgratif[imas1] * vl_FactorReajuste[imas1];
                             }
                         }
                     }
                 }
+                
                 #endregion
 
             }
