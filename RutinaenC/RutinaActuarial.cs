@@ -822,8 +822,17 @@ namespace RutinaenC
             titular = (from b in beneficiarios where b.CodigoParentesco == 99 select b).FirstOrDefault();
             noTitular = (from b in beneficiarios where b.CodigoParentesco != 99 select b).ToList();
 
-            FlujoPensionTitular(titular, modeloCotizacion, tablasMortalidad, gratificacion, factorReajuste, flujoTramos, ref fpx, ref flujosPension);
+            
+            if(tipoPension == "S")
+            {
+                FlujoPensionSupervivencia(noTitular, modeloCotizacion, tablasMortalidad, gratificacion, factorReajuste, ref fpx, ref flujosPension);
+            }
+            else
+            {   FlujoPensionTitular(titular, modeloCotizacion, tablasMortalidad, gratificacion, factorReajuste, flujoTramos, ref fpx, ref flujosPension);
+                FlujoPensionNoTitular(noTitular, modeloCotizacion, tablasMortalidad, gratificacion, factorReajuste, flujoTramos, ref fpx, ref flujosPension);
+            }
         }
+
 
         public void FlujoPensionTitular(Beneficiario titular, beDatosModalidad modeloCotizacion,
          List<Mortalidad> tablasMortalidad, List<int> gratificacion, List<double> factorReajuste,
@@ -1149,7 +1158,7 @@ namespace RutinaenC
             }
         }
 
-        public void FlujoPensionSupervivencia(List<Beneficiario> beneficiarios, beDatosModalidad modeloCotizacion, List<Mortalidad> tablasMortalidad, List<int> gratificacion, List<double> factorReajuste, List<double> flujoTramos, ref List<double> fpx, ref List<double> flujosPension)
+        public void FlujoPensionSupervivencia(List<Beneficiario> beneficiarios, beDatosModalidad modeloCotizacion, List<Mortalidad> tablasMortalidad, List<int> gratificacion, List<double> factorReajuste, ref List<double> fpx, ref List<double> flujosPension)
         {
             string indiceCobertura = modeloCotizacion.IndCob;
             string tipoPension = modeloCotizacion.Tippen;
@@ -1532,670 +1541,687 @@ namespace RutinaenC
 
         public void CalculaTasaDeVenta()
         {
-            //663      
-            #region Calcula Tasa de Venta
-            //'"EMPIEZA LA RUTINA DEL CALCULO DE TASA "
-            tirvta = ((Math.Pow((1 + (penmax / 100)), (double)Exp)) - 1) + 0.00001;
-        CalTva:
-            tasatirc = 0;
-            if (TitMayor)
+        //663      
+        #region Calcula Tasa de Venta
+        //'"EMPIEZA LA RUTINA DEL CALCULO DE TASA "
+        tirVenta = ((Math.Pow((1 + (penmax / 100)), (double)Exp)) - 1) + 0.00001;
+    CalTva:
+        #region "Inicializacion de variables"
+        tasatirc = 0;
+        if (TitMayor)
+        {
+            tirVenta = tirVenta + 0.00001;
+        }
+        else
+        {
+            tirVenta = tirVenta - 0.00001;
+        }
+
+        tvmax = tirVenta;
+        tce = amin1(tvmax, tci, tpr);
+        salcta_eva = MtoCic;
+        vppen = 0;
+        vpcm = 0;
+        vppenres = 0;
+        vpcmres = 0;
+        cr = 1; 
+    
+        dflupag = 0;
+        for (int ir = 0; ir <= Fintab; ir++)
+        {
+            fcru[ir] = 0;
+        }
+        for (i = 1; i <= nmax; i++)
+        {
+            if (i <= mescosto + 1)
             {
-                tirvta = tirvta + 0.00001;
+                fcru[i] = Flupen[i] * Math.Pow((1 / (1 + tvmax)), (0));
+                vppen = vppen + fcru[i];  
+            
+            
             }
             else
             {
-                tirvta = tirvta - 0.00001;
-            }
+                // CRU PENSION
+                fcru[i] = Flupen[i] * Math.Pow((1 / (1 + tvmax)), (cr));
+                vppen = vppen + fcru[i];
+                vppenres = vppenres + Flupen[i] / Math.Pow((1 + tce), (cr));
+                // CRU GS
+                fcruGS[i] = Flucm[i] * Math.Pow((1 / (1 + tvmax)), (cr - 0.5));
+                vpcm = vpcm + fcruGS[i];
+                vpcmres = vpcmres + Flucm[i] / Math.Pow((1 + tce), (cr - 0.5));
 
-            tvmax = tirvta;
-            tce = amin1(tvmax, tci, tpr);
-            salcta_eva = MtoCic;
-            vppen = 0;
-            vpcm = 0;
-            vppenres = 0;
-            vpcmres = 0;
-            cr = 1;
-            dflupag = 0;
-            for (int ir = 0; ir <= Fintab; ir++)
-            {
-                fcru[ir] = 0;
+                cr = cr + 1;
             }
-            for (i = 1; i <= nmax; i++)
+        }
+        penanu = (salcta_eva - vpcm) / vppen;
+        mesdiftmp = Mesdif;
+        mesdif1 = mesdifc;
+        #endregion
+
+        #region "Primer if grandote"
+        if (TipPen == "S")
+        {
+            if (TipRen == "D")
             {
-                if (i <= mescosto + 1)
+                //''SOBREVIVENCIA DIFERIDA
+                if (DerGratificacion == "S")
                 {
-                    fcru[i] = Flupen[i] * Math.Pow((1 / (1 + tvmax)), (0));
-                    vppen = vppen + fcru[i];
+                    mesdif1 = mesdif1 + ((mesdif1 / 12) * 2);
+                }
+                mesdiftmp = mesdif1 - mescon;
+                if (mesdiftmp < 0)
+                {
+                    mesdiftmp = 0;
+                }
+                ival = ((Math.Pow((1 + PrcAfp), (double)Exp)) - 1);
+                if (mescon > mesdif1)
+                {
+                    mesconTmp = mesdif1;
                 }
                 else
                 {
-                    // CRU PENSION
-                    fcru[i] = Flupen[i] * Math.Pow((1 / (1 + tvmax)), (cr));
-                    vppen = vppen + fcru[i];
-                    vppenres = vppenres + Flupen[i] / Math.Pow((1 + tce), (cr));
-                    // CRU GS
-                    fcruGS[i] = Flucm[i] * Math.Pow((1 / (1 + tvmax)), (cr - 0.5));
-                    vpcm = vpcm + fcruGS[i];
-                    vpcmres = vpcmres + Flucm[i] / Math.Pow((1 + tce), (cr - 0.5));
-
-                    cr = cr + 1;
+                    mesconTmp = mescon;
                 }
-            }
-            penanu = (salcta_eva - vpcm) / vppen;
-            mesdiftmp = Mesdif;
-            mesdif1 = mesdifc;
+                vppfactor = ival / ((ival * mesconTmp) + (1 - Math.Pow((1 + ival), -(mesdiftmp))) * (1 + ival));
+                Vpptem = (1 / vppfactor) * sumaporcsob;
+                penanu = (salcta_eva - vpcm) / (vppen + (Vpptem / PrcTaf));
+                Add_porc_be = Totpofr;
 
-            if (TipPen == "S")
-            {
-                if (TipRen == "D")
+                if (salcta_eva > 0)
                 {
-                    //''SOBREVIVENCIA DIFERIDA
-                    if (DerGratificacion == "S")
+                    if (Mone == "NS")
                     {
-                        mesdif1 = mesdif1 + ((mesdif1 / 12) * 2);
-                    }
-                    mesdiftmp = mesdif1 - mescon;
-                    if (mesdiftmp < 0)
-                    {
-                        mesdiftmp = 0;
-                    }
-                    ival = ((Math.Pow((1 + PrcAfp), (double)Exp)) - 1);
-                    if (mescon > mesdif1)
-                    {
-                        mesconTmp = mesdif1;
-                    }
-                    else
-                    {
-                        mesconTmp = mescon;
-                    }
-                    vppfactor = ival / ((ival * mesconTmp) + (1 - Math.Pow((1 + ival), -(mesdiftmp))) * (1 + ival));
-                    Vpptem = (1 / vppfactor) * sumaporcsob;
-                    penanu = (salcta_eva - vpcm) / (vppen + (Vpptem / PrcTaf));
-                    Add_porc_be = Totpofr;
-
-                    if (salcta_eva > 0)
-                    {
-                        if (Mone == "NS")
+                        if (Vpptem == 0 || PrcTaf == 0)
                         {
-                            if (Vpptem == 0 || PrcTaf == 0)
-                            {
-                                Rete_sim = 0;
-                            }
-                            else
-                            {
-                                Rete_sim = ((penanu / PrcTaf) / vppfactor) * sumaporcsob;
-                            }
+                            Rete_sim = 0;
                         }
                         else
                         {
-                            if (Vpptem == 0 || PrcTaf == 0)
-                            {
-                                Rete_sim = 0;
-                            }
-                            else
-                            {
-                                Rete_sim = ((penanu / PrcTaf) / vppfactor) * sumaporcsob;
-                            }
+                            Rete_sim = ((penanu / PrcTaf) / vppfactor) * sumaporcsob;
                         }
-                    }
-                    sumapenben = 0;
-                    sumapenben = (penanu / PrcTaf);
-                    vld_saldo = Rete_sim;
-                    if (vppen > 0)
-                    {
-                        salcta_eva = (salcta_eva - vld_saldo);
-                    }
-                    pensim = 0;
-                    if (vppen > 0)
-                    {
-                        penanu = (salcta_eva - vpcm) / vppen;
-                    }
-                }
-            }
-            else
-            {
-                if (TipRen == "D")
-                {
-                    if (DerGratificacion == "S")
-                    {
-                        mesdif1 = mesdif1 + ((mesdif1 / 12) * 2);
-                    }
-                    mesdiftmp = mesdif1 - mescon;
-                    if (mesdiftmp < 0) { mesdiftmp = 0; }
-                    ival = ((Math.Pow((1 + (PrcAfp)), (double)Exp)) - 1);
-                    if (mescon > mesdif1)
-                    {
-                        mesconTmp = mesdif1;
                     }
                     else
                     {
-                        mesconTmp = mescon;
-                    }
-                    vppfactor = ival / ((ival * mesconTmp) + (1 - Math.Pow((1 + ival), -(mesdiftmp))) * (1 + ival));
-                    Vpptem = (1 / vppfactor) * new_prc;
-                    penanu = (salcta_eva - vpcm) / (vppen + (Vpptem / PrcTaf));
-                    Add_porc_be = Totpofr;
+                        if (Vpptem == 0 || PrcTaf == 0)
 
-                    if (salcta_eva > 0)
-                    {
-                        if (Mone == "NS")
                         {
-                            if (Vpptem == 0 || PrcTaf == 0)
-                            {
-                                Rete_sim = 0;
-                            }
-                            else
-                            {
-                                Rete_sim = (penanu / PrcTaf) * Vpptem;
-                            }
+                            Rete_sim = 0;
                         }
                         else
                         {
-                            if (Vpptem == 0 || PrcTaf == 0)
-                            {
-                                Rete_sim = 0;
-                            }
-                            else
-                            {
-                                Rete_sim = (penanu / PrcTaf) * Vpptem;
-                            }
+                            Rete_sim = ((penanu / PrcTaf) / vppfactor) * sumaporcsob;
                         }
                     }
-                    sumapenben = 0;
-                    PensionBenef[1] = (penanu / PrcTaf);
-                    sumapenben = sumapenben + PensionBenef[1];
-
-                    vld_saldo = Rete_sim;
-                    if (vppen > 0)
-                    {
-                        salcta_eva = (salcta_eva - vld_saldo);
-                    }
-                    pensim = 0;
-                    if (vppen > 0)
-                    {
-                        penanu = (salcta_eva - vpcm) / vppen;
-                    }
+                }
+                sumapenben = 0;
+                sumapenben = (penanu / PrcTaf);
+                vld_saldo = Rete_sim;
+                if (vppen > 0)
+                {
+                    salcta_eva = (salcta_eva - vld_saldo);
+                }
+                pensim = 0;
+                if (vppen > 0)
+                {
+                    penanu = (salcta_eva - vpcm) / vppen;
                 }
             }
+        }
+        else
+        {
+            if (TipRen == "D")
+            {
+                if (DerGratificacion == "S")
+                {
+                    mesdif1 = mesdif1 + ((mesdif1 / 12) * 2);
+                }
+                mesdiftmp = mesdif1 - mescon;
+                if (mesdiftmp < 0) 
+                {    
+                    mesdiftmp = 0; 
+                }
+                ival = ((Math.Pow((1 + (PrcAfp)), (double)Exp)) - 1);
+                if (mescon > mesdif1)
+                {
+                    mesconTmp = mesdif1;
+                }
+                else
+                {
+                    mesconTmp = mescon;
+                }
+                vppfactor = ival / ((ival * mesconTmp) + (1 - Math.Pow((1 + ival), -(mesdiftmp))) * (1 + ival));
+                Vpptem = (1 / vppfactor) * new_prc;
+                penanu = (salcta_eva - vpcm) / (vppen + (Vpptem / PrcTaf));
+                Add_porc_be = Totpofr;
 
-            for (int ir = 0; ir <= Fintab; ir++)
-            {
-                Exced[ir] = 0;
+                if (salcta_eva > 0)
+                {
+                    if (Mone == "NS")
+                    {
+                        if (Vpptem == 0 || PrcTaf == 0)
+                        {
+                            Rete_sim = 0;
+                        }
+                        else
+                        {
+                            Rete_sim = (penanu / PrcTaf) * Vpptem;
+                        }
+                    }
+                    else
+                    {
+                        if (Vpptem == 0 || PrcTaf == 0)
+                        {
+                            Rete_sim = 0;
+                        }
+                        else
+                        {
+                            Rete_sim = (penanu / PrcTaf) * Vpptem;
+                        }
+                    }
+                }
+                sumapenben = 0;
+                PensionBenef[1] = (penanu / PrcTaf);
+                sumapenben = sumapenben + PensionBenef[1];
+
+                vld_saldo = Rete_sim;
+                if (vppen > 0)
+                {
+                    salcta_eva = (salcta_eva - vld_saldo);
+                }
+                pensim = 0;
+                if (vppen > 0)
+                {
+                    penanu = (salcta_eva - vpcm) / vppen;
+                }
             }
-            if (TipPen != "S")
-            {
-                sumaporcsob = 1;
-            }
-            reserva = 0;
-            PERDI = 0;
-            dflupag = 0;
-            flupag = 0;
-            //TRAE RESERVAS DE MESES CONSUMIDOS
-            for (int a = 0; a <= mescosto + 1; a++)
-            {
-                dflupag = dflupag + (penanu * Flupen[a] + Flucm[a]);
-            }
-            //TRAE RESERVAS
+        }
+        #endregion
+       
+       #region  "inicializa variables para dflugpag"
+        for (int ir = 0; ir <= Fintab; ir++)
+        {
+            Exced[ir] = 0;
+        }
+        if (TipPen != "S")
+        {
+            sumaporcsob = 1;
+        }
+        reserva = 0;
+        PERDI = 0;
+        dflupag = 0;
+        flupag = 0;
+        #endregion
+        //TRAE RESERVAS DE MESES CONSUMIDOS
+        for (int a = 0; a <= mescosto + 1; a++)
+        {
+            dflupag = dflupag + (penanu * Flupen[a] + Flucm[a]);
+        }
+        //TRAE RESERVAS
+        at = 1;
+        for (int a = (int)mescosto + 1; a <= nmax; a++)
+        {
+            resfin = resfin + ((penanu * Flupen[a + 1] + Flucm[a + 1]) / (Math.Pow((1 + tce), at)));
+            at = at + 1;
+        }
+            = resfin + dflupag;
+
+        PERDI = ((reserva / salcta_eva) - 1) * 100;
+
+        dComis = (salcta_eva * PrcCom);
+        dGasMan = (gastos / 12);
+        dVarRes = reserva;
+        dUtilImp = salcta_eva - (dComis + gasemi + dGasMan + dflupag + dVarRes);
+        dvarCap = dVarRes * dMarSol;
+        //PRIMER FLUJO EXDENTES
+        Exced[1] = dUtilImp - dImp - dvarCap;
+
+        dvarCapAnt = dvarCap;
+        resfinAnt = dVarRes;
+        vlContarMaximo = nmax;
+
+        for (i = 2; i <= nmax; i++)
+        {
+            relres = 1;
+            resfin = 0;
             at = 1;
-            for (int a = (int)mescosto + 1; a <= nmax; a++)
+            iRes = i + mescosto;
+            if (iRes == 1332) { goto CalExd; }
+            flupag = penanu * Flupen[iRes] + Flucm[iRes];
+            for (long a = iRes; a <= nmax; a++)
             {
                 resfin = resfin + ((penanu * Flupen[a + 1] + Flucm[a + 1]) / (Math.Pow((1 + tce), at)));
                 at = at + 1;
             }
-            reserva = resfin + dflupag;
+            resfin = flupag + resfin;
+            dGasMan = (gastos / 12) * (resfin / reserva);
+            dPagos = flupag;
 
-            PERDI = ((reserva / salcta_eva) - 1) * 100;
+            dVarRes = (resfin - resfinAnt);
+            dProdInv = (resfinAnt + dvarCapAnt) * Prodin[i];
+            dUtilImp = -(dGasMan + dPagos + dVarRes) + dProdInv;
 
-            dComis = (salcta_eva * PrcCom);
-            dGasMan = (gastos / 12);
-            dVarRes = reserva;
-            dUtilImp = salcta_eva - (dComis + gasemi + dGasMan + dflupag + dVarRes);
-            dvarCap = dVarRes * dMarSol;
-            //PRIMER FLUJO EXDENTES
-            Exced[1] = dUtilImp - dImp - dvarCap;
-
-            dvarCapAnt = dvarCap;
-            resfinAnt = dVarRes;
-            vlContarMaximo = nmax;
-
-            for (i = 2; i <= nmax; i++)
-            {
-                relres = 1;
-                resfin = 0;
-                at = 1;
-                iRes = i + mescosto;
-                if (iRes == 1332) { goto CalExd; }
-                flupag = penanu * Flupen[iRes] + Flucm[iRes];
-                for (long a = iRes; a <= nmax; a++)
-                {
-                    resfin = resfin + ((penanu * Flupen[a + 1] + Flucm[a + 1]) / (Math.Pow((1 + tce), at)));
-                    at = at + 1;
-                }
-                resfin = flupag + resfin;
-                dGasMan = (gastos / 12) * (resfin / reserva);
-                dPagos = flupag;
-
-                dVarRes = (resfin - resfinAnt);
-                dProdInv = (resfinAnt + dvarCapAnt) * Prodin[i];
-                dUtilImp = -(dGasMan + dPagos + dVarRes) + dProdInv;
-
-                dCapit = resfin * dMarSol;
-                dvarCap = dCapit - dvarCapAnt;
-                dImp = 0;
-                if (dUtilImp - dProdInv > 0)
-                {
-                    dImp = (dUtilImp - dProdInv) * 0.30;
-                }
-
-                Exced[i] = Math.Round(dUtilImp - dImp - dvarCap, 4);
-
-                dvarCapAnt = dCapit;
-                resfinAnt = resfin;
-            }
-
-        CalExd:
-            sumaex = 0;
-            for (i = 1; i <= vlContarMaximo; i++)
-            {
-                sumaex = sumaex + Exced[i] / Math.Pow((1 + tasatirc), i);
-            }
-            if (sumaex >= 0)
-            {
-                tasatirc = tasatirc + tasanc;
-                goto CalExd;
-            }
-            tasatirc = (Math.Pow((1 + tasatirc), 12)) - 1;
-
-            if (Math.Round(tasatirc, 5) < tasac)
-            {
-                TitMayor = false;
-                goto CalTva;
-            }
-            if (sumaex >= 0)
-            {
-                tirvta = tirvta + TINC1;
-                if (tirvta > 100)
-                {
-                    break;
-                }
-                sumaex1 = sumaex;
-                sumaex = 0;
-                goto CalTva;
-            }
-
-            tirmax = tirvta;
-            tirmax_ori = tirmax;
-            TTirMax = tirmax;
-            //CalPer:
-            if (PERDI > PERMAX)
-            {
-                goto CalTva;
-            }
-            if (PERDI < 0)
-            {
-                PERDI = 0;
-            }
-
-            tirmax = ((Math.Pow((1 + tirmax), 12)) - 1) * 100;
-            tirmax = Math.Round(tirmax, 2);
-            if (tirmax > penmax) { tirmax = penmax; }
-
-            //OBTIENE LOS VALORES FINALES CON LA TASA CALCULADA//
-            salcta_eva = MtoCic;
-            tirmax = ((Math.Pow((1 + (tirmax / 100)), (double)Exp)) - 1);
-            tvmax = tirmax;
-            vppen = 0;
-            vpcm = 0;
-            for (int ir = 0; ir <= Fintab; ir++)
-            {
-                fcru[ir] = 0;
-            }
-            cr = 1;
-            for (i = 1; i <= nmax; i++)
-            {
-                if (i <= mescosto + 1)
-                {
-                    fcru[i] = Flupen[i] * Math.Pow((1 / (1 + tvmax)), (0));
-                    vppen = vppen + fcru[i];
-                }
-                else
-                {
-                    // CRU PENSION
-                    fcru[i] = Flupen[i] * Math.Pow((1 / (1 + tvmax)), (cr));
-                    vppen = vppen + fcru[i];
-
-                    // CRU GS
-                    fcruGS[i] = Flucm[i] * Math.Pow((1 / (1 + tvmax)), (cr - 0.5));
-                    vpcm = vpcm + fcruGS[i];
-
-                    cr = cr + 1;
-                }
-            }
-            penanu = (salcta_eva - vpcm) / vppen;
-            mesdif1 = mesdifc;
-            sumapenben = 0;
-            if (TipPen == "S")
-            {
-                if (TipRen == "D")
-                {
-                    //''SOBREVIVENCIA DIFERIDA
-                    if (DerGratificacion == "S")
-                    {
-                        mesdif1 = mesdif1 + ((mesdif1 / 12) * 2);
-                    }
-                    mesdiftmp = mesdif1 - mescon;
-                    if (mesdiftmp < 0)
-                    {
-                        mesdiftmp = 0;
-                    }
-                    ival = ((Math.Pow((1 + PrcAfp), (double)Exp)) - 1);
-                    if (mescon > mesdif1)
-                    {
-                        mesconTmp = mesdif1;
-                    }
-                    else
-                    {
-                        mesconTmp = mescon;
-                    }
-                    vppfactor = ival / ((ival * mesconTmp) + (1 - Math.Pow((1 + ival), -(mesdiftmp))) * (1 + ival));
-                    Vpptem = (1 / vppfactor) * sumaporcsob;
-                    penanu = (salcta_eva - vpcm) / (vppen + (Vpptem / PrcTaf));
-                    Add_porc_be = Totpofr;
-
-                    if (salcta_eva > 0)
-                    {
-                        if (Mone == "NS")
-                        {
-                            if (Vpptem == 0 || PrcTaf == 0)
-                            {
-                                Rete_sim = 0;
-                            }
-                            else
-                            {
-                                Rete_sim = ((penanu / PrcTaf) / vppfactor) * sumaporcsob;
-                            }
-                        }
-                        else
-                        {
-                            if (Vpptem == 0 || PrcTaf == 0)
-                            {
-                                Rete_sim = 0;
-                            }
-                            else
-                            {
-                                Rete_sim = ((penanu / PrcTaf) / vppfactor) * sumaporcsob;
-                            }
-                        }
-                    }
-                    sumapenben = 0;
-                    sumapenben = (penanu / PrcTaf);
-                    vld_saldo = Rete_sim;
-                    if (vppen > 0)
-                    {
-                        salcta_eva = (salcta_eva - vld_saldo);
-                    }
-                    pensim = 0;
-                    if (vppen > 0)
-                    {
-                        penanu = (salcta_eva - vpcm) / vppen;
-                    }
-
-                }
-            }
-            else
-            {
-                if (TipRen == "D")
-                {
-                    if (DerGratificacion == "S")
-                    {
-                        mesdif1 = mesdif1 + ((mesdif1 / 12) * 2);
-                    }
-                    mesdiftmp = mesdif1 - mescon;
-                    if (mesdiftmp < 0) { mesdiftmp = 0; }
-                    ival = ((Math.Pow((1 + (PrcAfp)), (double)Exp)) - 1);
-                    if (mescon > mesdif1)
-                    {
-                        mesconTmp = mesdif1;
-                    }
-                    else
-                    {
-                        mesconTmp = mescon;
-                    }
-                    vppfactor = ival / ((ival * mesconTmp) + (1 - Math.Pow((1 + ival), -(mesdiftmp))) * (1 + ival));
-                    Vpptem = (1 / vppfactor) * new_prc;
-                    penanu = (salcta_eva - vpcm) / (vppen + (Vpptem / PrcTaf));
-                    Add_porc_be = Totpofr;
-
-                    if (salcta_eva > 0)
-                    {
-                        if (Mone == "NS")
-                        {
-                            if (Vpptem == 0 || PrcTaf == 0)
-                            {
-                                Rete_sim = 0;
-                            }
-                            else
-                            {
-                                Rete_sim = (penanu / PrcTaf) * Vpptem;
-                            }
-                        }
-                        else
-                        {
-                            if (Vpptem == 0 || PrcTaf == 0)
-                            {
-                                Rete_sim = 0;
-                            }
-                            else
-                            {
-                                Rete_sim = (penanu / PrcTaf) * Vpptem;
-                            }
-                        }
-                    }
-                    sumapenben = 0;
-                    PensionBenef[1] = (penanu / PrcTaf);
-                    sumapenben = sumapenben + PensionBenef[1];
-
-                    vld_saldo = Rete_sim;
-                    if (vppen > 0)
-                    {
-                        salcta_eva = (salcta_eva - vld_saldo);
-                    }
-                    pensim = 0;
-                    if (vppen > 0)
-                    {
-                        penanu = (salcta_eva - vpcm) / vppen;
-                    }
-                }
-            }
-
-            for (int ir = 0; ir <= Fintab; ir++)
-            {
-                Exced[ir] = 0;
-            }
-            if (TipPen != "S")
-            {
-                sumaporcsob = 1;
-            }
-
-            //calcula la tci de nuevo para la nueva tasa por si se necesita en algun momento
-            tci = 0;
-            tce = 0;
-            vpte = 0;
-            vpte2 = 0;
-            difres = 0;
-            difre1 = 0;
-            tir = 0;
-            tinc = 0.00001;
-
-        CalTce2:
-            //EMPIEZA LA RUTINA DEL CALCULO DE TCE 
-            Tasa = (tir / 100);
-            i = 1;
-            cr = 1;
-            for (i = 0; i <= nmax; i++)
-                for (i = 0; i <= nmax; i++)
-                {
-                    if (i < mescosto)
-                    {
-
-                    }
-                    else
-                    {
-                        if (i == 850)
-                        {
-                            r = 1;
-                        }
-                        fpagosRes[cr] = (Flupen[i + 1] * penanu + Flucm[i + 1]) / Math.Pow((1 + Tasa), cr);
-                        vpte = vpte + ((Flupen[i + 1] * penanu + Flucm[i + 1]) / Math.Pow((1 + Tasa), cr));
-                        vpte2 = vpte2 + (((Flupen[i + 1] * penanu) + Flucm[i + 1]) / factual[cr]);
-                        cr = cr + 1;
-                    }
-                }
-            difres = vpte - vpte2;
-            if (difres >= 0)
-            {
-                tir = tir + tinc;
-                if (tir > 100)
-                {
-                    msj = "Tasa TIR mayor o igual a 100%. ";
-                    return ListaResultador;
-                }
-                difre1 = difres;
-                vpte = 0;
-                vpte2 = 0;
-                goto CalTce2;
-            }
-            tci = (tir / 100);
-
-            //minimo de tasas
-            tce = amin1(tvmax, tci, tpr);
-
-            dflupag = 0;
-            //TRAE RESERVAS DE MESES CONSUMIDOS
-            for (int a = 0; a <= mescosto + 1; a++)
-            {
-                dflupag = dflupag + (penanu * Flupen[a] + Flucm[a]);// / (Math.Pow((1 + tce), a)));
-            }
-
-            //TRAE RESERVAS
-            at = 1;
-            for (int a = (int)mescosto + 1; a <= nmax; a++)
-            {
-                fpagosRes[at] = (penanu * Flupen[a + 1] + Flucm[a + 1]);
-                resfin = resfin + ((penanu * Flupen[a + 1] + Flucm[a + 1]) / (Math.Pow((1 + tce), at)));
-                at = at + 1;
-            }
-            reserva = resfin + dflupag;
-            PERDI = ((reserva / salcta_eva) - 1) * 100;
-
-            dUtilImp = 0;
-            dCapit = 0;
-            dvarCap = 0;
-            dComis = 0;
-            dGasMan = 0;
-            dPagos = 0;
-            dVarRes = 0;
-            dProdInv = 0;
+            dCapit = resfin * dMarSol;
+            dvarCap = dCapit - dvarCapAnt;
             dImp = 0;
-            dMarSol = (6.75 / 100);
-            dvarCapAnt = 0;
-            resfinAnt = 0;
-
-            dComis = (salcta_eva * PrcCom);
-            dGasMan = (gastos / 12);
-            dVarRes = reserva;
-            dUtilImp = salcta_eva - (dComis + gasemi + dGasMan + dflupag + dVarRes);
-            dvarCap = dVarRes * dMarSol;
-
-            Exced[1] = dUtilImp - dImp - dvarCap;
-
-            dvarCapAnt = dvarCap;
-            resfinAnt = reserva;
-            vlContarMaximo = nmax;
-
-            for (i = 2; i <= nmax; i++)
+            if (dUtilImp - dProdInv > 0)
             {
-
-                relres = 1;
-                resfin = 0;
-                at = 1;
-                iRes = i + mescosto;
-                if (iRes == 1332) { goto CalSalExd; }
-                flupag = penanu * Flupen[iRes] + Flucm[iRes];
-                for (long a = iRes; a <= nmax; a++)
-                {
-                    resfin = resfin + ((penanu * Flupen[a + 1] + Flucm[a + 1]) / (Math.Pow((1 + tce), at)));
-                    at = at + 1;
-                }
-                resfin = flupag + resfin;
-
-                dGasMan = (gastos / 12) * (resfin / reserva);
-                dPagos = flupag;
-
-                dVarRes = (resfin - resfinAnt);
-                dProdInv = (resfinAnt + dvarCapAnt) * Prodin[i];
-                dUtilImp = -(dGasMan + dPagos + dVarRes) + dProdInv;
-
-                dCapit = resfin * dMarSol;
-                dvarCap = dCapit - dvarCapAnt;
-                dImp = 0;
-                if (dUtilImp - dProdInv > 0)
-                {
-                    dImp = (dUtilImp - dProdInv) * 0.30;
-                }
-
-                Exced[i] = Math.Round(dUtilImp - dImp - dvarCap, 4);
-
-                dvarCapAnt = dCapit;
-                resfinAnt = resfin;
+                dImp = (dUtilImp - dProdInv) * 0.30;
             }
 
-        CalSalExd:
-            tasatirc = 0;
-            sumaex = 0;
-        CalExd2:
-            sumaex = 0;
-            for (i = 1; i <= vlContarMaximo; i++)
-            {
-                sumaex = sumaex + Exced[i] / Math.Pow((1 + tasatirc), i);
-            }
-            if (sumaex >= 0)
-            {
-                tasatirc = tasatirc + tasanc;
-                goto CalExd2;
-            }
+            Exced[i] = Math.Round(dUtilImp - dImp - dvarCap, 4);
 
-            tasatirc = (Math.Pow((1 + tasatirc), 12)) - 1;
-            if (tasatirc > 100)
+            dvarCapAnt = dCapit;
+            resfinAnt = resfin;
+        }
+
+    CalExd:
+        sumaex = 0;
+        for (i = 1; i <= vlContarMaximo; i++)
+        {
+            sumaex = sumaex + Exced[i] / Math.Pow((1 + tasatirc), i);
+        }
+        if (sumaex >= 0)
+        {
+            tasatirc = tasatirc + tasanc;
+            goto CalExd;
+        }
+        tasatirc = (Math.Pow((1 + tasatirc), 12)) - 1;
+
+        if (Math.Round(tasatirc, 5) < tasac)
+        {
+            TitMayor = false;
+            goto CalTva;
+        }
+        if (sumaex >= 0)
+        {
+            tirVenta = tirVenta + TINC1;
+            if (tirVenta > 100)
             {
                 break;
             }
+            sumaex1 = sumaex;
+            sumaex = 0;
+            goto CalTva;
+        }
 
-            PERDI = ((reserva / salcta_eva) - 1) * 100;
+        tirmax = tirVenta;
+        tirmax_ori = tirmax;
+        TTirMax = tirmax;
+        //CalPer:
+        if (PERDI > PERMAX)
+        {
+            goto CalTva;
+        }
+        if (PERDI < 0)
+        {
+            PERDI = 0;
+        }
 
-            if (PERDI < 0)
+        tirmax = ((Math.Pow((1 + tirmax), 12)) - 1) * 100;
+        tirmax = Math.Round(tirmax, 2);
+        if (tirmax > penmax) { tirmax = penmax; }
+
+        //OBTIENE LOS VALORES FINALES CON LA TASA CALCULADA//
+        salcta_eva = MtoCic;
+        tirmax = ((Math.Pow((1 + (tirmax / 100)), (double)Exp)) - 1);
+        tvmax = tirmax;
+        vppen = 0;
+        vpcm = 0;
+        for (int ir = 0; ir <= Fintab; ir++)
+        {
+            fcru[ir] = 0;
+        }
+        cr = 1;
+        for (i = 1; i <= nmax; i++)
+        {
+            if (i <= mescosto + 1)
             {
-                PERDI = 0;
+                fcru[i] = Flupen[i] * Math.Pow((1 / (1 + tvmax)), (0));
+                vppen = vppen + fcru[i];
             }
-            perdis = PERDI;
-            tce = ((Math.Pow((1 + tce), 12)) - 1) * 100;
-            tci = ((Math.Pow((1 + tci), 12)) - 1) * 100;
-            tpr = ((Math.Pow((1 + tpr), 12)) - 1) * 100;
-            tasatirc = tasatirc * 100;
-            tirmax = (Math.Pow((1 + tirmax), 12)) - 1;
-            tirmax = tirmax * 100;
-            tasa_tir = Math.Round((tasatirc), 2);
-            tasa_vta = Math.Round(tirmax, 2);
-            tasa_tce = Math.Round(tce, 2);
-            tasa_tci = Math.Round(tci, 2);
-            Tasa_pro = Math.Round(tpr, 2);
-            tprc_per = Math.Round(perdis, 2);
+            else
+            {
+                // CRU PENSION
+                fcru[i] = Flupen[i] * Math.Pow((1 / (1 + tvmax)), (cr));
+                vppen = vppen + fcru[i];
 
-            //FIN////
+                // CRU GS
+                fcruGS[i] = Flucm[i] * Math.Pow((1 / (1 + tvmax)), (cr - 0.5));
+                vpcm = vpcm + fcruGS[i];
+
+                cr = cr + 1;
+            }
+        }
+        
+        penanu = (salcta_eva - vpcm) / vppen;
+        mesdif1 = mesdifc;
+        sumapenben = 0;
+        
+        #region "Segundo if grandote igual al primero"
+        if (TipPen == "S")
+        {
+            if (TipRen == "D")
+            {
+                //''SOBREVIVENCIA DIFERIDA
+                if (DerGratificacion == "S")
+                {
+                    mesdif1 = mesdif1 + ((mesdif1 / 12) * 2);
+                }
+                mesdiftmp = mesdif1 - mescon;
+                if (mesdiftmp < 0)
+                {
+                    mesdiftmp = 0;
+                }
+                ival = ((Math.Pow((1 + PrcAfp), (double)Exp)) - 1);
+                if (mescon > mesdif1)
+                {
+                    mesconTmp = mesdif1;
+                }
+                else
+                {
+                    mesconTmp = mescon;
+                }
+                vppfactor = ival / ((ival * mesconTmp) + (1 - Math.Pow((1 + ival), -(mesdiftmp))) * (1 + ival));
+                Vpptem = (1 / vppfactor) * sumaporcsob;
+                penanu = (salcta_eva - vpcm) / (vppen + (Vpptem / PrcTaf));
+                Add_porc_be = Totpofr;
+
+                if (salcta_eva > 0)
+                {
+                    if (Mone == "NS")
+                    {
+                        if (Vpptem == 0 || PrcTaf == 0)
+                        {
+                            Rete_sim = 0;
+                        }
+                        else
+                        {
+                            Rete_sim = ((penanu / PrcTaf) / vppfactor) * sumaporcsob;
+                        }
+                    }
+                    else
+                    {
+                        if (Vpptem == 0 || PrcTaf == 0)
+                        {
+                            Rete_sim = 0;
+                        }
+                        else
+                        {
+                            Rete_sim = ((penanu / PrcTaf) / vppfactor) * sumaporcsob;
+                        }
+                    }
+                }
+                sumapenben = 0;
+                sumapenben = (penanu / PrcTaf);
+                vld_saldo = Rete_sim;
+                if (vppen > 0)
+                {
+                    salcta_eva = (salcta_eva - vld_saldo);
+                }
+                pensim = 0;
+                if (vppen > 0)
+                {
+                    penanu = (salcta_eva - vpcm) / vppen;
+                }
+
+            }
+        }
+        else
+        {
+            if (TipRen == "D")
+            {
+                if (DerGratificacion == "S")
+                {
+                    mesdif1 = mesdif1 + ((mesdif1 / 12) * 2);
+                }
+                mesdiftmp = mesdif1 - mescon;
+                if (mesdiftmp < 0) { mesdiftmp = 0; }
+                ival = ((Math.Pow((1 + (PrcAfp)), (double)Exp)) - 1);
+                if (mescon > mesdif1)
+                {
+                    mesconTmp = mesdif1;
+                }
+                else
+                {
+                    mesconTmp = mescon;
+                }
+                vppfactor = ival / ((ival * mesconTmp) + (1 - Math.Pow((1 + ival), -(mesdiftmp))) * (1 + ival));
+                Vpptem = (1 / vppfactor) * new_prc;
+                penanu = (salcta_eva - vpcm) / (vppen + (Vpptem / PrcTaf));
+                Add_porc_be = Totpofr;
+
+                if (salcta_eva > 0)
+                {
+                    if (Mone == "NS")
+                    {
+                        if (Vpptem == 0 || PrcTaf == 0)
+                        {
+                            Rete_sim = 0;
+                        }
+                        else
+                        {
+                            Rete_sim = (penanu / PrcTaf) * Vpptem;
+                        }
+                    }
+                    else
+                    {
+                        if (Vpptem == 0 || PrcTaf == 0)
+                        {
+                            Rete_sim = 0;
+                        }
+                        else
+                        {
+                            Rete_sim = (penanu / PrcTaf) * Vpptem;
+                        }
+                    }
+                }
+                sumapenben = 0;
+                PensionBenef[1] = (penanu / PrcTaf);
+                sumapenben = sumapenben + PensionBenef[1];
+
+                vld_saldo = Rete_sim;
+                if (vppen > 0)
+                {
+                    salcta_eva = (salcta_eva - vld_saldo);
+                }
+                pensim = 0;
+                if (vppen > 0)
+                {
+                    penanu = (salcta_eva - vpcm) / vppen;
+                }
+            }
+        }
+        #endregion
+        
+        for (int ir = 0; ir <= Fintab; ir++)
+        {
+            Exced[ir] = 0;
+        }
+        if (TipPen != "S")
+        {
+            sumaporcsob = 1;
+        }
+
+        //calcula la tci de nuevo para la nueva tasa por si se necesita en algun momento
+        tci = 0;
+        tce = 0;
+        vpte = 0;
+        vpte2 = 0;
+        difres = 0;
+        difre1 = 0;
+        tir = 0;
+        tinc = 0.00001;
+
+    CalTce2:
+        //EMPIEZA LA RUTINA DEL CALCULO DE TCE 
+        Tasa = (tir / 100);
+        i = 1;
+        cr = 1;
+        for (i = 0; i <= nmax; i++)
+            for (i = 0; i <= nmax; i++)
+            {
+                if (i < mescosto)
+                {
+
+                }
+                else
+                {
+                    if (i == 850)
+                    {
+                        r = 1;
+                    }
+                    fpagosRes[cr] = (Flupen[i + 1] * penanu + Flucm[i + 1]) / Math.Pow((1 + Tasa), cr);
+                    vpte = vpte + ((Flupen[i + 1] * penanu + Flucm[i + 1]) / Math.Pow((1 + Tasa), cr));
+                    vpte2 = vpte2 + (((Flupen[i + 1] * penanu) + Flucm[i + 1]) / factual[cr]);
+                    cr = cr + 1;
+                }
+            }
+        difres = vpte - vpte2;
+        if (difres >= 0)
+        {
+            tir = tir + tinc;
+            if (tir > 100)
+            {
+                msj = "Tasa TIR mayor o igual a 100%. ";
+                return ListaResultador;
+            }
+            difre1 = difres;
+            vpte = 0;
+            vpte2 = 0;
+            goto CalTce2;
+        }
+        tci = (tir / 100);
+
+        //minimo de tasas
+        tce = amin1(tvmax, tci, tpr);
+
+        dflupag = 0;
+        //TRAE RESERVAS DE MESES CONSUMIDOS
+        for (int a = 0; a <= mescosto + 1; a++)
+        {
+            dflupag = dflupag + (penanu * Flupen[a] + Flucm[a]);// / (Math.Pow((1 + tce), a)));
+        }
+
+        //TRAE RESERVAS
+        at = 1;
+        for (int a = (int)mescosto + 1; a <= nmax; a++)
+        {
+            fpagosRes[at] = (penanu * Flupen[a + 1] + Flucm[a + 1]);
+            resfin = resfin + ((penanu * Flupen[a + 1] + Flucm[a + 1]) / (Math.Pow((1 + tce), at)));
+            at = at + 1;
+        }
+        reserva = resfin + dflupag;
+        PERDI = ((reserva / salcta_eva) - 1) * 100;
+
+        dUtilImp = 0;
+        dCapit = 0;
+        dvarCap = 0;
+        dComis = 0;
+        dGasMan = 0;
+        dPagos = 0;
+        dVarRes = 0;
+        dProdInv = 0;
+        dImp = 0;
+        dMarSol = (6.75 / 100);
+        dvarCapAnt = 0;
+        resfinAnt = 0;
+
+        dComis = (salcta_eva * PrcCom);
+        dGasMan = (gastos / 12);
+        dVarRes = reserva;
+        dUtilImp = salcta_eva - (dComis + gasemi + dGasMan + dflupag + dVarRes);
+        dvarCap = dVarRes * dMarSol;
+
+        Exced[1] = dUtilImp - dImp - dvarCap;
+
+        dvarCapAnt = dvarCap;
+        resfinAnt = reserva;
+        vlContarMaximo = nmax;
+
+        for (i = 2; i <= nmax; i++)
+        {
+
+            relres = 1;
+            resfin = 0;
+            at = 1;
+            iRes = i + mescosto;
+            if (iRes == 1332) { goto CalSalExd; }
+            flupag = penanu * Flupen[iRes] + Flucm[iRes];
+            for (long a = iRes; a <= nmax; a++)
+            {
+                resfin = resfin + ((penanu * Flupen[a + 1] + Flucm[a + 1]) / (Math.Pow((1 + tce), at)));
+                at = at + 1;
+            }
+            resfin = flupag + resfin;
+
+            dGasMan = (gastos / 12) * (resfin / reserva);
+            dPagos = flupag;
+
+            dVarRes = (resfin - resfinAnt);
+            dProdInv = (resfinAnt + dvarCapAnt) * Prodin[i];
+            dUtilImp = -(dGasMan + dPagos + dVarRes) + dProdInv;
+
+            dCapit = resfin * dMarSol;
+            dvarCap = dCapit - dvarCapAnt;
+            dImp = 0;
+            if (dUtilImp - dProdInv > 0)
+            {
+                dImp = (dUtilImp - dProdInv) * 0.30;
+            }
+
+            Exced[i] = Math.Round(dUtilImp - dImp - dvarCap, 4);
+
+            dvarCapAnt = dCapit;
+            resfinAnt = resfin;
+        }
+
+    CalSalExd:
+        tasatirc = 0;
+        sumaex = 0;
+    CalExd2:
+        sumaex = 0;
+        for (i = 1; i <= vlContarMaximo; i++)
+        {
+            sumaex = sumaex + Exced[i] / Math.Pow((1 + tasatirc), i);
+        }
+        if (sumaex >= 0)
+        {
+            tasatirc = tasatirc + tasanc;
+            goto CalExd2;
+        }
+
+        tasatirc = (Math.Pow((1 + tasatirc), 12)) - 1;
+        if (tasatirc > 100)
+        {
+            break;
+        }
+
+        PERDI = ((reserva / salcta_eva) - 1) * 100;
+
+        if (PERDI < 0)
+        {
+            PERDI = 0;
+        }
+        perdis = PERDI;
+        tce = ((Math.Pow((1 + tce), 12)) - 1) * 100;
+        tci = ((Math.Pow((1 + tci), 12)) - 1) * 100;
+        tpr = ((Math.Pow((1 + tpr), 12)) - 1) * 100;
+        tasatirc = tasatirc * 100;
+        tirmax = (Math.Pow((1 + tirmax), 12)) - 1;
+        tirmax = tirmax * 100;
+        tasa_tir = Math.Round((tasatirc), 2);
+        tasa_vta = Math.Round(tirmax, 2);
+        tasa_tce = Math.Round(tce, 2);
+        tasa_tci = Math.Round(tci, 2);
+        Tasa_pro = Math.Round(tpr, 2);
+        tprc_per = Math.Round(perdis, 2);
+
+        //FIN////
 
 
 
-            #endregion
+        #endregion
         }
 
         public void SumaPensionesConjuntoFamiliar()
