@@ -834,9 +834,7 @@ namespace RutinaenC
         }
 
 
-        public void FlujoPensionTitular(Beneficiario titular, beDatosModalidad modeloCotizacion,
-         List<Mortalidad> tablasMortalidad, List<int> gratificacion, List<double> factorReajuste,
-         List<double> flujoTramos, ref List<double> fpx, ref List<double> flujosPension)
+        public void FlujoPensionTitular(Beneficiario titular, beDatosModalidad modeloCotizacion, List<Mortalidad> tablasMortalidad, List<int> gratificacion, List<double> factorReajuste, List<double> flujoTramos, ref List<double> fpx, ref List<double> flujosPension)
         {
             string indiceCobertura = modeloCotizacion.IndCob;
             string tipoPension = modeloCotizacion.Tippen;
@@ -1483,11 +1481,11 @@ namespace RutinaenC
             if (mesesCosto > (mesesDiferidos + mesesGarantizados))
                 mesesCosto = mesesCosto - (mesesDiferidos + mesesGarantizados);
 
-            //'Periodo Diferido
+            //Periodo Diferido
             if (mesesDiferidos == mesesCosto)
                 mesesDiferidos = (mesesCosto - mesesDiferidos);
 
-            //'Periodo Garantizado
+            //Periodo Garantizado
             if (mesesCosto > (mesesDiferidos + mesesGarantizados))
             {
                 mesesGarantizados = 0;
@@ -1557,23 +1555,24 @@ namespace RutinaenC
             tirVenta = tirVenta - 0.00001;
         }
 
-        tvmax = tirVenta;
-        tce = amin1(tvmax, tci, tpr);
-        salcta_eva = MtoCic;
-        vppen = 0;
-        vpcm = 0;
-        vppenres = 0;
-        vpcmres = 0;
-        cr = 1; 
+        tvmax = tirVenta;      // se utiliza 10 veces
+tce = amin1(tvmax, tci, tpr); //se utiliza 14 veces se setea al minimo 2 veces
+        salcta_eva = MtoCic; // se utiliza 31 veces se setea a MtoCic 2 veces
+        vppen = 0;          // se usa 28 veces se setea a 0 2 veces
+        vpcm = 0;          //se usa 16 veces se setea a 0 2 veces
+        vppenres = 0;     //se usa 3 veces
+        vpcmres = 0;     // se usa 3 veces
+        cr = 1;         // se utiliza 18 veces se setea a 1 3 veces
     
-        dflupag = 0;
-        for (int ir = 0; ir <= Fintab; ir++)
+        for (int ir = 0; ir <= finMortalidad; ir++)
         {
-            fcru[ir] = 0;
+            fcru[ir] = 0;// se utiliza 10 veces se reinicia 2 veces
         }
-        for (i = 1; i <= nmax; i++)
+        #endregion
+        #region Calculos CRU Pension y CRU Gastos de Sepelio
+        for (int i = 1; i <= nmax; i++)
         {
-            if (i <= mescosto + 1)
+            if (i <= mesesCosto + 1)
             {
                 fcru[i] = Flupen[i] * Math.Pow((1 / (1 + tvmax)), (0));
                 vppen = vppen + fcru[i];  
@@ -1585,11 +1584,11 @@ namespace RutinaenC
                 // CRU PENSION
                 fcru[i] = Flupen[i] * Math.Pow((1 / (1 + tvmax)), (cr));
                 vppen = vppen + fcru[i];
-                vppenres = vppenres + Flupen[i] / Math.Pow((1 + tce), (cr));
+                vppenres = vppenres + Flupen[i] / Math.Pow((1 + tce), (cr)); // esta variable ya no se vuelve a usar
                 // CRU GS
                 fcruGS[i] = Flucm[i] * Math.Pow((1 / (1 + tvmax)), (cr - 0.5));
                 vpcm = vpcm + fcruGS[i];
-                vpcmres = vpcmres + Flucm[i] / Math.Pow((1 + tce), (cr - 0.5));
+                vpcmres = vpcmres + Flucm[i] / Math.Pow((1 + tce), (cr - 0.5)); // esta variable ya no se vuelve a usar
 
                 cr = cr + 1;
             }
@@ -1738,8 +1737,8 @@ namespace RutinaenC
         }
         #endregion
        
-       #region  "inicializa variables para dflugpag"
-        for (int ir = 0; ir <= Fintab; ir++)
+        #region  "inicializa variables para obtener reservas"
+        for (int ir = 0; ir <= finMortalidad; ir++)
         {
             Exced[ir] = 0;
         }
@@ -1749,22 +1748,25 @@ namespace RutinaenC
         }
         reserva = 0;
         PERDI = 0;
-        dflupag = 0;
+        dflupag = 0; // se utiliza 10 veces se setea a 0 2 veces
         flupag = 0;
         #endregion
+       
+        #region Obtener Reservas
         //TRAE RESERVAS DE MESES CONSUMIDOS
-        for (int a = 0; a <= mescosto + 1; a++)
+        for (int a = 0; a <= mesesCosto + 1; a++)
         {
             dflupag = dflupag + (penanu * Flupen[a] + Flucm[a]);
         }
         //TRAE RESERVAS
         at = 1;
-        for (int a = (int)mescosto + 1; a <= nmax; a++)
+        for (int a = (int)mesesCosto + 1; a <= nmax; a++)
         {
             resfin = resfin + ((penanu * Flupen[a + 1] + Flucm[a + 1]) / (Math.Pow((1 + tce), at)));
             at = at + 1;
         }
-            = resfin + dflupag;
+        reserva = resfin + dflupag;
+        #endregion
 
         PERDI = ((reserva / salcta_eva) - 1) * 100;
 
@@ -1780,12 +1782,12 @@ namespace RutinaenC
         resfinAnt = dVarRes;
         vlContarMaximo = nmax;
 
-        for (i = 2; i <= nmax; i++)
-        {
+        for (int i = 2; i <= nmax; i++)
+        {   
             relres = 1;
             resfin = 0;
             at = 1;
-            iRes = i + mescosto;
+            iRes = i + mesesCosto;
             if (iRes == 1332) { goto CalExd; }
             flupag = penanu * Flupen[iRes] + Flucm[iRes];
             for (long a = iRes; a <= nmax; a++)
@@ -1868,14 +1870,14 @@ namespace RutinaenC
         tvmax = tirmax;
         vppen = 0;
         vpcm = 0;
-        for (int ir = 0; ir <= Fintab; ir++)
+        for (int ir = 0; ir <= finMortalidad; ir++)
         {
             fcru[ir] = 0;
         }
         cr = 1;
         for (i = 1; i <= nmax; i++)
         {
-            if (i <= mescosto + 1)
+            if (i <= mesesCosto + 1)
             {
                 fcru[i] = Flupen[i] * Math.Pow((1 / (1 + tvmax)), (0));
                 vppen = vppen + fcru[i];
@@ -2034,7 +2036,7 @@ namespace RutinaenC
         }
         #endregion
         
-        for (int ir = 0; ir <= Fintab; ir++)
+        for (int ir = 0; ir <= finMortalidad; ir++)
         {
             Exced[ir] = 0;
         }
@@ -2058,25 +2060,21 @@ namespace RutinaenC
         Tasa = (tir / 100);
         i = 1;
         cr = 1;
+        
         for (i = 0; i <= nmax; i++)
-            for (i = 0; i <= nmax; i++)
+        {
+            if (i  >= mesesCosto)
             {
-                if (i < mescosto)
+                if (i == 850)
                 {
-
+                    r = 1;
                 }
-                else
-                {
-                    if (i == 850)
-                    {
-                        r = 1;
-                    }
-                    fpagosRes[cr] = (Flupen[i + 1] * penanu + Flucm[i + 1]) / Math.Pow((1 + Tasa), cr);
-                    vpte = vpte + ((Flupen[i + 1] * penanu + Flucm[i + 1]) / Math.Pow((1 + Tasa), cr));
-                    vpte2 = vpte2 + (((Flupen[i + 1] * penanu) + Flucm[i + 1]) / factual[cr]);
-                    cr = cr + 1;
-                }
+                fpagosRes[cr] = (Flupen[i + 1] * penanu + Flucm[i + 1]) / Math.Pow((1 + Tasa), cr);
+                vpte = vpte + ((Flupen[i + 1] * penanu + Flucm[i + 1]) / Math.Pow((1 + Tasa), cr));
+                vpte2 = vpte2 + (((Flupen[i + 1] * penanu) + Flucm[i + 1]) / factual[cr]);
+                cr = cr + 1;
             }
+        }
         difres = vpte - vpte2;
         if (difres >= 0)
         {
@@ -2098,14 +2096,14 @@ namespace RutinaenC
 
         dflupag = 0;
         //TRAE RESERVAS DE MESES CONSUMIDOS
-        for (int a = 0; a <= mescosto + 1; a++)
+        for (int a = 0; a <= mesesCosto + 1; a++)
         {
             dflupag = dflupag + (penanu * Flupen[a] + Flucm[a]);// / (Math.Pow((1 + tce), a)));
         }
 
         //TRAE RESERVAS
         at = 1;
-        for (int a = (int)mescosto + 1; a <= nmax; a++)
+        for (int a = (int)mesesCosto + 1; a <= nmax; a++)
         {
             fpagosRes[at] = (penanu * Flupen[a + 1] + Flucm[a + 1]);
             resfin = resfin + ((penanu * Flupen[a + 1] + Flucm[a + 1]) / (Math.Pow((1 + tce), at)));
@@ -2145,7 +2143,7 @@ namespace RutinaenC
             relres = 1;
             resfin = 0;
             at = 1;
-            iRes = i + mescosto;
+            iRes = i + mesesCosto;
             if (iRes == 1332) { goto CalSalExd; }
             flupag = penanu * Flupen[iRes] + Flucm[iRes];
             for (long a = iRes; a <= nmax; a++)
