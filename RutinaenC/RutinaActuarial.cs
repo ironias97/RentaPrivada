@@ -20,10 +20,9 @@ namespace RutinaenC
         public const int aniosBasTM = 2017;
 
         public int mesesCosto = 0;
-
         public int mesesDiferidos = 0;
         public int mesesGarantizados = 0;
-
+        public double montoCic = 0;
         public List<beResultados> RutinaPension(
            beDatosModalidad modeloCotizacion, List<beDatosBen> modeloBeneficiarios,
            List<beDatosTasasPar> modeloTasas, List<beTasaMercado> modeloTasasMercado,
@@ -58,7 +57,7 @@ namespace RutinaenC
                 int finTab = modeloCotizacion.FinTab;
                 int tipoReajuste = modeloCotizacion.TipRea;
 
-                ObtenerMesesCotizacion(modeloCotizacion);
+                ObtenerDatosCotizacion(modeloCotizacion);
 
                 beneficiarios = CargarBeneficiarios(modeloBeneficiarios, tipoPension);
                 tasa = CargarTasas(modeloTasas, ref modeloCotizacion);
@@ -833,7 +832,6 @@ namespace RutinaenC
             }
         }
 
-
         public void FlujoPensionTitular(Beneficiario titular, beDatosModalidad modeloCotizacion, List<Mortalidad> tablasMortalidad, List<int> gratificacion, List<double> factorReajuste, List<double> flujoTramos, ref List<double> fpx, ref List<double> flujosPension)
         {
             string indiceCobertura = modeloCotizacion.IndCob;
@@ -1393,13 +1391,6 @@ namespace RutinaenC
 
         public List<double> CalcularCurvaTasas(beDatosModalidad modeloCotizacion, List<beCurvaTasas> curvasTasas, int limite, List<double> flujosPension, List<double> flujosMesesConsumidos, ref double montoPoliza, ref double pensionBase)
         {
-            double montoCic = modeloCotizacion.MtoPri;
-            double montoMoneda = modeloCotizacion.ValCam;
-            double porcentajeRentaComison = modeloCotizacion.RepRC;
-
-            string tipoRenta = modeloCotizacion.TipRen;
-            string codigoMoneda = modeloCotizacion.CodMon;
-
             double sumapx = 0;
             double sumaqx = 0;
             decimal Expf = 0;
@@ -1410,11 +1401,6 @@ namespace RutinaenC
 
             limite = limite + 1;
             flujoActual.Add(0);
-
-            montoCic = codigoMoneda != "NS" ? montoCic / montoMoneda : montoCic;
-
-            if (tipoRenta == "C" || tipoRenta == "M")
-                montoCic = montoCic * porcentajeRentaComison;
 
             for (int i = 0; i <= limite; i++)
             {
@@ -1458,12 +1444,19 @@ namespace RutinaenC
         /// <summary>
         /// Josué Gutierrez / Antonio Quezada
         /// 2019-08-13
-        /// Actualiza las variables meses diferidos, meses garantizados y meses costo
+        /// Actualiza las variables meses diferidos, meses garantizados, meses costo y monto Cic
         /// </summary>
         /// <param name="modeloCotizacion"> Modalidad </param>
 
-        public void ObtenerMesesCotizacion(beDatosModalidad modeloCotizacion)
+        public void ObtenerDatosCotizacion(beDatosModalidad modeloCotizacion)
         {
+            double montoCic = modeloCotizacion.MtoPri;
+            double montoMoneda = modeloCotizacion.ValCam;
+            double porcentajeRentaComison = modeloCotizacion.RepRC;
+
+            string tipoRenta = modeloCotizacion.TipRen;
+            string codigoMoneda = modeloCotizacion.CodMon;
+
             int aniosFechaCotizacion = Convert.ToInt32(modeloCotizacion.FecCot.Substring(0, 4));
             int mesesFechaCotizacion = Convert.ToInt32(modeloCotizacion.FecCot.Substring(4, 2));
 
@@ -1497,6 +1490,11 @@ namespace RutinaenC
                     mesesGarantizados = (mesesDiferidos + mesesGarantizados);
                 }
             }
+            //Obtiene MontoCic
+            montoCic = codigoMoneda != "NS" ? montoCic / montoMoneda : montoCic;
+
+            if (tipoRenta == "C" || tipoRenta == "M")
+                montoCic = montoCic * porcentajeRentaComison;
 
         }
 
@@ -1537,62 +1535,76 @@ namespace RutinaenC
 
         #endregion
 
-        public void CalculaTasaDeVenta()
+        public void CalculaTasaDeVenta(beDatosModalidad modeloCotizacion, beDatosTasasPar tasas, List<double> flujoPension, List<double> flujosMesesConsumidos, double tasaPromedio, double tci, int limite)
         {
+            List<double> captualRequeridoUnitario = new List<double>();
+            List<double> captualRequeridoUnitarioSepelio = new List<double>();
+            List<double> valores = new List<double>();
+
+            int cr = 1;
+
+            double captualRU;
+            double captualRUGS;
+            double tasaTIR;
+            double pensionAnual;
+
+            double vpPension = 0;
+            double vpPensionResultado = 0;
+            double vpMesesConsumidos = 0;
+            double vpMesesConsumidosResultado = 0;
+            double tce;
+            
+            double tirVenta = Math.Pow(1 + (tasas.PrcTas / 100), (double) Exp) - 1 + 0.00001;
+
+            tirVenta = tirVenta - 0.00001;
+            valores.Add(tirVenta);
+            valores.Add(tci);
+            valores.Add(tce);
+            tce = ObtenerMinimoMaximo(valores, "MIN");
+            valores.Clear();
+            captualRequeridoUnitario.Add(0);
+            captualRequeridoUnitarioSepelio.Add(0);
+            for (int i = 1; i < limite; i++)
+            {
+                if( i <= mesesCosto + 1)
+                {
+                    captualRU = flujoPension[i] + Math.Pow(1 / (1 + tirVenta), 0);
+                    captualRequeridoUnitario.Add(captualRU);
+                    vpPension =+ captualRU;
+                    captualRequeridoUnitarioSepelio.Add(0);
+                }
+                else
+                {
+                    captualRU = flujoPension[i] + Math.Pow(1 / (1 + tirVenta), cr);
+                    captualRequeridoUnitario.Add(captualRU);
+                    vpPension =+ captualRU;
+                    vpPensionResultado =+ flujoPension[i] / Math.Pow(1 + tce, cr);
+
+                    captualRUGS = flujosMesesConsumidos[i] * Math.Pow(1/(1 + tirVenta), cr - 0.5);
+                    captualRequeridoUnitarioSepelio.Add(captualRUGS);
+                    vpMesesConsumidos =+ captualRUGS;
+                    vpMesesConsumidosResultado =+ flujosMesesConsumidos[i] / Math.Pow(1 + tce, cr - 0.5);
+
+                    cr++;
+                }
+            }
+
+            pensionAnual = 
+
         //663      
         #region Calcula Tasa de Venta
-        //'"EMPIEZA LA RUTINA DEL CALCULO DE TASA "
-        tirVenta = ((Math.Pow((1 + (penmax / 100)), (double)Exp)) - 1) + 0.00001;
-    CalTva:
+       
         #region "Inicializacion de variables"
+         //'"EMPIEZA LA RUTINA DEL CALCULO DE TASA "
+        CalTva:
         tasatirc = 0;
-        if (TitMayor)
-        {
-            tirVenta = tirVenta + 0.00001;
-        }
-        else
-        {
-            tirVenta = tirVenta - 0.00001;
-        }
-
-        tvmax = tirVenta;      // se utiliza 10 veces
-tce = amin1(tvmax, tci, tpr); //se utiliza 14 veces se setea al minimo 2 veces
-        salcta_eva = MtoCic; // se utiliza 31 veces se setea a MtoCic 2 veces
-        vppen = 0;          // se usa 28 veces se setea a 0 2 veces
-        vpcm = 0;          //se usa 16 veces se setea a 0 2 veces
-        vppenres = 0;     //se usa 3 veces
-        vpcmres = 0;     // se usa 3 veces
-        cr = 1;         // se utiliza 18 veces se setea a 1 3 veces
-    
-        for (int ir = 0; ir <= finMortalidad; ir++)
-        {
-            fcru[ir] = 0;// se utiliza 10 veces se reinicia 2 veces
-        }
+        
+        PERDI = ((reserva / salcta_eva) - 1) * 100;
+        salcta_eva = MtoCic;         // se utiliza 31 veces se setea a MtoCic 2 veces
         #endregion
+       
         #region Calculos CRU Pension y CRU Gastos de Sepelio
-        for (int i = 1; i <= nmax; i++)
-        {
-            if (i <= mesesCosto + 1)
-            {
-                fcru[i] = Flupen[i] * Math.Pow((1 / (1 + tvmax)), (0));
-                vppen = vppen + fcru[i];  
-            
-            
-            }
-            else
-            {
-                // CRU PENSION
-                fcru[i] = Flupen[i] * Math.Pow((1 / (1 + tvmax)), (cr));
-                vppen = vppen + fcru[i];
-                vppenres = vppenres + Flupen[i] / Math.Pow((1 + tce), (cr)); // esta variable ya no se vuelve a usar
-                // CRU GS
-                fcruGS[i] = Flucm[i] * Math.Pow((1 / (1 + tvmax)), (cr - 0.5));
-                vpcm = vpcm + fcruGS[i];
-                vpcmres = vpcmres + Flucm[i] / Math.Pow((1 + tce), (cr - 0.5)); // esta variable ya no se vuelve a usar
-
-                cr = cr + 1;
-            }
-        }
+        
         penanu = (salcta_eva - vpcm) / vppen;
         mesdiftmp = Mesdif;
         mesdif1 = mesdifc;
@@ -1740,14 +1752,13 @@ tce = amin1(tvmax, tci, tpr); //se utiliza 14 veces se setea al minimo 2 veces
         #region  "inicializa variables para obtener reservas"
         for (int ir = 0; ir <= finMortalidad; ir++)
         {
-            Exced[ir] = 0;
+            excedente[ir] = 0;
         }
         if (TipPen != "S")
         {
             sumaporcsob = 1;
         }
         reserva = 0;
-        PERDI = 0;
         dflupag = 0; // se utiliza 10 veces se setea a 0 2 veces
         flupag = 0;
         #endregion
@@ -1768,7 +1779,7 @@ tce = amin1(tvmax, tci, tpr); //se utiliza 14 veces se setea al minimo 2 veces
         reserva = resfin + dflupag;
         #endregion
 
-        PERDI = ((reserva / salcta_eva) - 1) * 100;
+        #region Obtener Flujo Exedentes
 
         dComis = (salcta_eva * PrcCom);
         dGasMan = (gastos / 12);
@@ -1776,7 +1787,7 @@ tce = amin1(tvmax, tci, tpr); //se utiliza 14 veces se setea al minimo 2 veces
         dUtilImp = salcta_eva - (dComis + gasemi + dGasMan + dflupag + dVarRes);
         dvarCap = dVarRes * dMarSol;
         //PRIMER FLUJO EXDENTES
-        Exced[1] = dUtilImp - dImp - dvarCap;
+        excedente[1] = dUtilImp - dImp - dvarCap;
 
         dvarCapAnt = dvarCap;
         resfinAnt = dVarRes;
@@ -1805,23 +1816,23 @@ tce = amin1(tvmax, tci, tpr); //se utiliza 14 veces se setea al minimo 2 veces
 
             dCapit = resfin * dMarSol;
             dvarCap = dCapit - dvarCapAnt;
-            dImp = 0;
-            if (dUtilImp - dProdInv > 0)
-            {
-                dImp = (dUtilImp - dProdInv) * 0.30;
-            }
 
-            Exced[i] = Math.Round(dUtilImp - dImp - dvarCap, 4);
+            dImp =(dUtilImp - dProdInv > 0) ?  (dUtilImp - dProdInv) * 0.30 : 0;
+
+            excedente[i] = Math.Round(dUtilImp - dImp - dvarCap, 4);
 
             dvarCapAnt = dCapit;
             resfinAnt = resfin;
         }
-
+        #endregion
+       
+        #region Validaciones para Recurcividad en calculo de flujo exedentes
+    
     CalExd:
         sumaex = 0;
-        for (i = 1; i <= vlContarMaximo; i++)
+        for (int i = 1; i <= vlContarMaximo; i++)
         {
-            sumaex = sumaex + Exced[i] / Math.Pow((1 + tasatirc), i);
+            sumaex = sumaex + excedente[i] / Math.Pow((1 + tasatirc), i);
         }
         if (sumaex >= 0)
         {
@@ -1850,8 +1861,8 @@ tce = amin1(tvmax, tci, tpr); //se utiliza 14 veces se setea al minimo 2 veces
         tirmax = tirVenta;
         tirmax_ori = tirmax;
         TTirMax = tirmax;
-        //CalPer:
-        if (PERDI > PERMAX)
+
+        if ( PERMAX < PERDI)
         {
             goto CalTva;
         }
@@ -1859,7 +1870,9 @@ tce = amin1(tvmax, tci, tpr); //se utiliza 14 veces se setea al minimo 2 veces
         {
             PERDI = 0;
         }
+        #endregion
 
+        #region Calculos CRU Pension y CRU Gastos de Sepelio
         tirmax = ((Math.Pow((1 + tirmax), 12)) - 1) * 100;
         tirmax = Math.Round(tirmax, 2);
         if (tirmax > penmax) { tirmax = penmax; }
@@ -1875,7 +1888,7 @@ tce = amin1(tvmax, tci, tpr); //se utiliza 14 veces se setea al minimo 2 veces
             fcru[ir] = 0;
         }
         cr = 1;
-        for (i = 1; i <= nmax; i++)
+        for ( int i = 1; i <= nmax; i++)
         {
             if (i <= mesesCosto + 1)
             {
@@ -1899,6 +1912,7 @@ tce = amin1(tvmax, tci, tpr); //se utiliza 14 veces se setea al minimo 2 veces
         penanu = (salcta_eva - vpcm) / vppen;
         mesdif1 = mesdifc;
         sumapenben = 0;
+        #endregion
         
         #region "Segundo if grandote igual al primero"
         if (TipPen == "S")
@@ -2036,16 +2050,20 @@ tce = amin1(tvmax, tci, tpr); //se utiliza 14 veces se setea al minimo 2 veces
         }
         #endregion
         
+        #region Reset ecxecentes
         for (int ir = 0; ir <= finMortalidad; ir++)
         {
-            Exced[ir] = 0;
+            excedente[ir] = 0;
         }
         if (TipPen != "S")
         {
             sumaporcsob = 1;
         }
+        #endregion
 
+        #region se calcula el de nuevo el tci 
         //calcula la tci de nuevo para la nueva tasa por si se necesita en algun momento
+        PERDI = ((reserva / salcta_eva) - 1) * 100;
         tci = 0;
         tce = 0;
         vpte = 0;
@@ -2061,7 +2079,7 @@ tce = amin1(tvmax, tci, tpr); //se utiliza 14 veces se setea al minimo 2 veces
         i = 1;
         cr = 1;
         
-        for (i = 0; i <= nmax; i++)
+        for (int i = 0; i <= nmax; i++)
         {
             if (i  >= mesesCosto)
             {
@@ -2098,7 +2116,7 @@ tce = amin1(tvmax, tci, tpr); //se utiliza 14 veces se setea al minimo 2 veces
         //TRAE RESERVAS DE MESES CONSUMIDOS
         for (int a = 0; a <= mesesCosto + 1; a++)
         {
-            dflupag = dflupag + (penanu * Flupen[a] + Flucm[a]);// / (Math.Pow((1 + tce), a)));
+            dflupag = dflupag + (penanu * Flupen[a] + Flucm[a]);
         }
 
         //TRAE RESERVAS
@@ -2110,8 +2128,9 @@ tce = amin1(tvmax, tci, tpr); //se utiliza 14 veces se setea al minimo 2 veces
             at = at + 1;
         }
         reserva = resfin + dflupag;
-        PERDI = ((reserva / salcta_eva) - 1) * 100;
+    	#endregion
 
+        #region 2do Calculo de Exedentes
         dUtilImp = 0;
         dCapit = 0;
         dvarCap = 0;
@@ -2131,13 +2150,13 @@ tce = amin1(tvmax, tci, tpr); //se utiliza 14 veces se setea al minimo 2 veces
         dUtilImp = salcta_eva - (dComis + gasemi + dGasMan + dflupag + dVarRes);
         dvarCap = dVarRes * dMarSol;
 
-        Exced[1] = dUtilImp - dImp - dvarCap;
+        excedente[1] = dUtilImp - dImp - dvarCap;
 
         dvarCapAnt = dvarCap;
         resfinAnt = reserva;
         vlContarMaximo = nmax;
 
-        for (i = 2; i <= nmax; i++)
+        for (int i = 2; i <= nmax; i++)
         {
 
             relres = 1;
@@ -2168,20 +2187,22 @@ tce = amin1(tvmax, tci, tpr); //se utiliza 14 veces se setea al minimo 2 veces
                 dImp = (dUtilImp - dProdInv) * 0.30;
             }
 
-            Exced[i] = Math.Round(dUtilImp - dImp - dvarCap, 4);
+            excedente[i] = Math.Round(dUtilImp - dImp - dvarCap, 4);
 
             dvarCapAnt = dCapit;
             resfinAnt = resfin;
         }
+        #endregion
 
+        #region Validaciones 2do calculo Exedentes
     CalSalExd:
         tasatirc = 0;
         sumaex = 0;
     CalExd2:
         sumaex = 0;
-        for (i = 1; i <= vlContarMaximo; i++)
+        for (int i = 1; i <= vlContarMaximo; i++)
         {
-            sumaex = sumaex + Exced[i] / Math.Pow((1 + tasatirc), i);
+            sumaex = sumaex + excedente[i] / Math.Pow((1 + tasatirc), i);
         }
         if (sumaex >= 0)
         {
@@ -2195,12 +2216,13 @@ tce = amin1(tvmax, tci, tpr); //se utiliza 14 veces se setea al minimo 2 veces
             break;
         }
 
-        PERDI = ((reserva / salcta_eva) - 1) * 100;
-
         if (PERDI < 0)
         {
             PERDI = 0;
         }
+        #endregion
+
+        #region Resultados
         perdis = PERDI;
         tce = ((Math.Pow((1 + tce), 12)) - 1) * 100;
         tci = ((Math.Pow((1 + tci), 12)) - 1) * 100;
@@ -2213,10 +2235,8 @@ tce = amin1(tvmax, tci, tpr); //se utiliza 14 veces se setea al minimo 2 veces
         tasa_tce = Math.Round(tce, 2);
         tasa_tci = Math.Round(tci, 2);
         Tasa_pro = Math.Round(tpr, 2);
-        tprc_per = Math.Round(perdis, 2);
-
-        //FIN////
-
+        tasaPorcentajePerdidas = Math.Round(perdis, 2);
+        #endregion
 
 
         #endregion
@@ -2229,7 +2249,7 @@ tce = amin1(tvmax, tci, tpr); //se utiliza 14 veces se setea al minimo 2 veces
             {
                 sumapenben = 0;
             }
-            int e = 1;
+            int e = 1; 
             vlSumaPension = 0;
 
             for (int vlI = 0; vlI <= Nben; vlI++)
