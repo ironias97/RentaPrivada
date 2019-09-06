@@ -1547,12 +1547,13 @@ namespace RutinaenC
             double captualRUGS;
             double tasaTIR;
             double pensionAnual;
+            double tce;
 
             double vpPension = 0;
             double vpPensionResultado = 0;
             double vpMesesConsumidos = 0;
             double vpMesesConsumidosResultado = 0;
-            double tce;
+            double saldoCuentaEvaluada = montoCic;            
             
             double tirVenta = Math.Pow(1 + (tasas.PrcTas / 100), (double) Exp) - 1 + 0.00001;
 
@@ -1589,7 +1590,7 @@ namespace RutinaenC
                 }
             }
 
-            pensionAnual = 
+            pensionAnual = (saldoCuentaEvaluada - vpMesesConsumidos) / vpPension;
 
         //663      
         #region Calcula Tasa de Venta
@@ -1600,12 +1601,10 @@ namespace RutinaenC
         tasatirc = 0;
         
         PERDI = ((reserva / salcta_eva) - 1) * 100;
-        salcta_eva = MtoCic;         // se utiliza 31 veces se setea a MtoCic 2 veces
         #endregion
        
         #region Calculos CRU Pension y CRU Gastos de Sepelio
         
-        penanu = (salcta_eva - vpcm) / vppen;
         mesdiftmp = Mesdif;
         mesdif1 = mesdifc;
         #endregion
