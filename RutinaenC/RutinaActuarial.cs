@@ -1535,7 +1535,7 @@ namespace RutinaenC
 
         #endregion
 
-        public void CalculaTasaDeVenta(beDatosModalidad modeloCotizacion, beDatosTasasPar tasas, List<double> flujoPension, List<double> flujosMesesConsumidos, double tasaPromedio, double tci, int limite)
+        public void CalculaTasaDeVenta(beDatosModalidad modeloCotizacion, beDatosTasasPar tasas, List<double> flujoPension, List<double> flujosMesesConsumidos, double tasaPromedio, double tci, int limite, double sumaPorcentajePension)
         {
             List<double> captualRequeridoUnitario = new List<double>();
             List<double> captualRequeridoUnitarioSepelio = new List<double>();
@@ -1553,14 +1553,18 @@ namespace RutinaenC
             double vpPensionResultado = 0;
             double vpMesesConsumidos = 0;
             double vpMesesConsumidosResultado = 0;
-            double saldoCuentaEvaluada = montoCic;            
+            double sumaPensionBeneficiario = 0;
+            double saldoCuentaEvaluada = montoCic;
+            double porcentajeAfp = modeloCotizacion.RenAfp;
+            double porcentajeRentaTmp = modeloCotizacion.RenTmp;
             
             double tirVenta = Math.Pow(1 + (tasas.PrcTas / 100), (double) Exp) - 1 + 0.00001;
 
+            #region Pension Anual
             tirVenta = tirVenta - 0.00001;
             valores.Add(tirVenta);
             valores.Add(tci);
-            valores.Add(tce);
+            valores.Add(tasaPromedio);
             tce = ObtenerMinimoMaximo(valores, "MIN");
             valores.Clear();
             captualRequeridoUnitario.Add(0);
@@ -1590,8 +1594,8 @@ namespace RutinaenC
                 }
             }
 
-            pensionAnual = (saldoCuentaEvaluada - vpMesesConsumidos) / vpPension;
-
+        pensionAnual = (saldoCuentaEvaluada - vpMesesConsumidos) / vpPension;
+        #endregion
         //663      
         #region Calcula Tasa de Venta
        
@@ -1599,155 +1603,94 @@ namespace RutinaenC
          //'"EMPIEZA LA RUTINA DEL CALCULO DE TASA "
         CalTva:
         tasatirc = 0;
-        
-        PERDI = ((reserva / salcta_eva) - 1) * 100;
+        PERDI = ((reserva / saldoCuentaEvaluada) - 1) * 100;
         #endregion
-       
-        #region Calculos CRU Pension y CRU Gastos de Sepelio
-        
-        mesdiftmp = Mesdif;
-        mesdif1 = mesdifc;
-        #endregion
-
         #region "Primer if grandote"
+        int mesesDiferidosAux = Mesdif;
+        int mesesDiferidosModeloCotizacion = modeloCotizacion.MesDif;
+        int mesesCostoAux;
+
+        double ival;
+        double vpFactorPension;
+        double vpPensionAux;
+
+        string tipoRenta = modeloCotizacion.Cobertura;
+
         if (TipPen == "S")
         {
-            if (TipRen == "D")
+            if (tipoRenta == "D")
             {
                 //''SOBREVIVENCIA DIFERIDA
-                if (DerGratificacion == "S")
-                {
-                    mesdif1 = mesdif1 + ((mesdif1 / 12) * 2);
-                }
-                mesdiftmp = mesdif1 - mescon;
-                if (mesdiftmp < 0)
-                {
-                    mesdiftmp = 0;
-                }
-                ival = ((Math.Pow((1 + PrcAfp), (double)Exp)) - 1);
-                if (mescon > mesdif1)
-                {
-                    mesconTmp = mesdif1;
-                }
-                else
-                {
-                    mesconTmp = mescon;
-                }
-                vppfactor = ival / ((ival * mesconTmp) + (1 - Math.Pow((1 + ival), -(mesdiftmp))) * (1 + ival));
-                Vpptem = (1 / vppfactor) * sumaporcsob;
-                penanu = (salcta_eva - vpcm) / (vppen + (Vpptem / PrcTaf));
-                Add_porc_be = Totpofr;
+                mesesDiferidosAux = mesesDiferidosModeloCotizacion - mesesCosto;
+               
+                if (mesesDiferidosAux < 0)
+                    mesesDiferidosAux = 0;
 
-                if (salcta_eva > 0)
-                {
-                    if (Mone == "NS")
-                    {
-                        if (Vpptem == 0 || PrcTaf == 0)
-                        {
-                            Rete_sim = 0;
-                        }
-                        else
-                        {
-                            Rete_sim = ((penanu / PrcTaf) / vppfactor) * sumaporcsob;
-                        }
-                    }
-                    else
-                    {
-                        if (Vpptem == 0 || PrcTaf == 0)
+                ival = ((Math.Pow((1 + porcentajeAfp), (double)Exp)) - 1);
 
-                        {
-                            Rete_sim = 0;
-                        }
-                        else
-                        {
-                            Rete_sim = ((penanu / PrcTaf) / vppfactor) * sumaporcsob;
-                        }
-                    }
-                }
-                sumapenben = 0;
-                sumapenben = (penanu / PrcTaf);
-                vld_saldo = Rete_sim;
-                if (vppen > 0)
+                mesesCostoAux = (mesesCosto > mesesDiferidosModeloCotizacion) ?
+                 mesesDiferidosModeloCotizacion : mesesCosto;
+
+                vpFactorPension = ival / ((ival * mesesCostoAux) + (1 - Math.Pow((1 + ival), 
+                -(mesesDiferidosAux))) * (1 + ival));
+
+                vpPensionAux = (1 / vpFactorPension) * sumaPorcentajePension;
+                pensionAnual = (saldoCuentaEvaluada - vpMesesConsumidos) / 
+                (vpPension + (vpPensionAux / porcentajeRentaTmp));
+
+                if (saldoCuentaEvaluada > 0)
+                    Rete_sim = (vpPensionAux == 0 || porcentajeRentaTmp == 0) ? 0 
+                    : ((pensionAnual / porcentajeRentaTmp) / vpFactorPension) * sumaPorcentajePension;
+
+                sumaPensionBeneficiario = (pensionAnual / porcentajeRentaTmp);
+
+                if (vpPension > 0)
                 {
-                    salcta_eva = (salcta_eva - vld_saldo);
-                }
-                pensim = 0;
-                if (vppen > 0)
-                {
-                    penanu = (salcta_eva - vpcm) / vppen;
+                    saldoCuentaEvaluada = (saldoCuentaEvaluada - Rete_sim);
+                    pensionAnual = (saldoCuentaEvaluada - vpMesesConsumidos) / vpPension;
                 }
             }
         }
         else
         {
-            if (TipRen == "D")
+            if (tipoRenta == "D")
             {
-                if (DerGratificacion == "S")
-                {
-                    mesdif1 = mesdif1 + ((mesdif1 / 12) * 2);
-                }
-                mesdiftmp = mesdif1 - mescon;
-                if (mesdiftmp < 0) 
-                {    
-                    mesdiftmp = 0; 
-                }
-                ival = ((Math.Pow((1 + (PrcAfp)), (double)Exp)) - 1);
-                if (mescon > mesdif1)
-                {
-                    mesconTmp = mesdif1;
-                }
-                else
-                {
-                    mesconTmp = mescon;
-                }
-                vppfactor = ival / ((ival * mesconTmp) + (1 - Math.Pow((1 + ival), -(mesdiftmp))) * (1 + ival));
-                Vpptem = (1 / vppfactor) * new_prc;
-                penanu = (salcta_eva - vpcm) / (vppen + (Vpptem / PrcTaf));
-                Add_porc_be = Totpofr;
 
-                if (salcta_eva > 0)
-                {
-                    if (Mone == "NS")
-                    {
-                        if (Vpptem == 0 || PrcTaf == 0)
-                        {
-                            Rete_sim = 0;
-                        }
-                        else
-                        {
-                            Rete_sim = (penanu / PrcTaf) * Vpptem;
-                        }
-                    }
-                    else
-                    {
-                        if (Vpptem == 0 || PrcTaf == 0)
-                        {
-                            Rete_sim = 0;
-                        }
-                        else
-                        {
-                            Rete_sim = (penanu / PrcTaf) * Vpptem;
-                        }
-                    }
-                }
-                sumapenben = 0;
-                PensionBenef[1] = (penanu / PrcTaf);
-                sumapenben = sumapenben + PensionBenef[1];
+                mesesDiferidosAux = mesesDiferidosModeloCotizacion - mesesCosto;
+                
+                if (mesesDiferidosAux < 0) 
+                    mesesDiferidosAux = 0; 
 
-                vld_saldo = Rete_sim;
-                if (vppen > 0)
+                ival = ((Math.Pow((1 + (porcentajeAfp)), (double)Exp)) - 1);
+
+                mesesCostoAux = (mesesCosto > mesesDiferidosModeloCotizacion) ? 
+                mesesDiferidosModeloCotizacion : mesesCosto;
+
+                vpFactorPension = ival / ((ival * mesesCostoAux) + (1 - Math.Pow((1 + ival),
+                 -(mesesDiferidosAux))) * (1 + ival));
+
+                vpPensionAux = (1 / vpFactorPension) * new_prc;
+                pensionAnual = (saldoCuentaEvaluada - vpMesesConsumidos) / 
+                (vpPension + (vpPensionAux / porcentajeRentaTmp));
+
+                if (saldoCuentaEvaluada > 0)
+                    Rete_sim =(vpPensionAux == 0 || porcentajeRentaTmp == 0) ? 0
+                     : (pensionAnual / porcentajeRentaTmp) * vpPensionAux;
+
+                sumaPensionBeneficiario = 0;
+                PensionBenef[1] = (pensionAnual / porcentajeRentaTmp);
+                sumaPensionBeneficiario = sumaPensionBeneficiario + PensionBenef[1];
+
+                if (vpPension > 0)
                 {
-                    salcta_eva = (salcta_eva - vld_saldo);
+                    saldoCuentaEvaluada = (saldoCuentaEvaluada - Rete_sim);
+                    pensionAnual = (saldoCuentaEvaluada - vpMesesConsumidos) / vpPension;
                 }
-                pensim = 0;
-                if (vppen > 0)
-                {
-                    penanu = (salcta_eva - vpcm) / vppen;
-                }
+
             }
         }
         #endregion
-       
+        
         #region  "inicializa variables para obtener reservas"
         for (int ir = 0; ir <= finMortalidad; ir++)
         {
@@ -1755,7 +1698,7 @@ namespace RutinaenC
         }
         if (TipPen != "S")
         {
-            sumaporcsob = 1;
+            sumaPorcentajePension = 1;
         }
         reserva = 0;
         dflupag = 0; // se utiliza 10 veces se setea a 0 2 veces
@@ -1766,13 +1709,13 @@ namespace RutinaenC
         //TRAE RESERVAS DE MESES CONSUMIDOS
         for (int a = 0; a <= mesesCosto + 1; a++)
         {
-            dflupag = dflupag + (penanu * Flupen[a] + Flucm[a]);
+            dflupag = dflupag + (pensionAnual * Flupen[a] + Flucm[a]);
         }
         //TRAE RESERVAS
         at = 1;
         for (int a = (int)mesesCosto + 1; a <= nmax; a++)
         {
-            resfin = resfin + ((penanu * Flupen[a + 1] + Flucm[a + 1]) / (Math.Pow((1 + tce), at)));
+            resfin = resfin + ((pensionAnual * Flupen[a + 1] + Flucm[a + 1]) / (Math.Pow((1 + tce), at)));
             at = at + 1;
         }
         reserva = resfin + dflupag;
@@ -1780,10 +1723,10 @@ namespace RutinaenC
 
         #region Obtener Flujo Exedentes
 
-        dComis = (salcta_eva * PrcCom);
+        dComis = (saldoCuentaEvaluada * PrcCom);
         dGasMan = (gastos / 12);
         dVarRes = reserva;
-        dUtilImp = salcta_eva - (dComis + gasemi + dGasMan + dflupag + dVarRes);
+        dUtilImp = saldoCuentaEvaluada - (dComis + gasemi + dGasMan + dflupag + dVarRes);
         dvarCap = dVarRes * dMarSol;
         //PRIMER FLUJO EXDENTES
         excedente[1] = dUtilImp - dImp - dvarCap;
@@ -1799,10 +1742,10 @@ namespace RutinaenC
             at = 1;
             iRes = i + mesesCosto;
             if (iRes == 1332) { goto CalExd; }
-            flupag = penanu * Flupen[iRes] + Flucm[iRes];
+            flupag = pensionAnual * Flupen[iRes] + Flucm[iRes];
             for (long a = iRes; a <= nmax; a++)
             {
-                resfin = resfin + ((penanu * Flupen[a + 1] + Flucm[a + 1]) / (Math.Pow((1 + tce), at)));
+                resfin = resfin + ((pensionAnual * Flupen[a + 1] + Flucm[a + 1]) / (Math.Pow((1 + tce), at)));
                 at = at + 1;
             }
             resfin = flupag + resfin;
@@ -1877,11 +1820,11 @@ namespace RutinaenC
         if (tirmax > penmax) { tirmax = penmax; }
 
         //OBTIENE LOS VALORES FINALES CON LA TASA CALCULADA//
-        salcta_eva = MtoCic;
+        saldoCuentaEvaluada = MtoCic;
         tirmax = ((Math.Pow((1 + (tirmax / 100)), (double)Exp)) - 1);
         tvmax = tirmax;
-        vppen = 0;
-        vpcm = 0;
+        vpPension = 0;
+        vpMesesConsumidos = 0;
         for (int ir = 0; ir <= finMortalidad; ir++)
         {
             fcru[ir] = 0;
@@ -1892,158 +1835,144 @@ namespace RutinaenC
             if (i <= mesesCosto + 1)
             {
                 fcru[i] = Flupen[i] * Math.Pow((1 / (1 + tvmax)), (0));
-                vppen = vppen + fcru[i];
+                vpPension = vpPension + fcru[i];
             }
             else
             {
                 // CRU PENSION
                 fcru[i] = Flupen[i] * Math.Pow((1 / (1 + tvmax)), (cr));
-                vppen = vppen + fcru[i];
+                vpPension = vpPension + fcru[i];
 
                 // CRU GS
                 fcruGS[i] = Flucm[i] * Math.Pow((1 / (1 + tvmax)), (cr - 0.5));
-                vpcm = vpcm + fcruGS[i];
+                vpMesesConsumidos = vpMesesConsumidos + fcruGS[i];
 
                 cr = cr + 1;
             }
         }
         
-        penanu = (salcta_eva - vpcm) / vppen;
-        mesdif1 = mesdifc;
-        sumapenben = 0;
+        pensionAnual = (saldoCuentaEvaluada - vpMesesConsumidos) / vpPension;
+        mesesDiferidosModeloCotizacion = modeloCotizacion.MesDif;
+        sumaPensionBeneficiario = 0;
         #endregion
         
         #region "Segundo if grandote igual al primero"
         if (TipPen == "S")
         {
-            if (TipRen == "D")
+            if (tipoRenta == "D")
             {
                 //''SOBREVIVENCIA DIFERIDA
-                if (DerGratificacion == "S")
+                mesesDiferidosAux = mesesDiferidosModeloCotizacion - mesesCosto;
+                if (mesesDiferidosAux < 0)
                 {
-                    mesdif1 = mesdif1 + ((mesdif1 / 12) * 2);
+                    mesesDiferidosAux = 0;
                 }
-                mesdiftmp = mesdif1 - mescon;
-                if (mesdiftmp < 0)
+                ival = ((Math.Pow((1 + porcentajeAfp), (double)Exp)) - 1);
+                if (mesesCosto > mesesDiferidosModeloCotizacion)
                 {
-                    mesdiftmp = 0;
-                }
-                ival = ((Math.Pow((1 + PrcAfp), (double)Exp)) - 1);
-                if (mescon > mesdif1)
-                {
-                    mesconTmp = mesdif1;
+                    mesesCostoAux = mesesDiferidosModeloCotizacion;
                 }
                 else
                 {
-                    mesconTmp = mescon;
+                    mesesCostoAux = mesesCosto;
                 }
-                vppfactor = ival / ((ival * mesconTmp) + (1 - Math.Pow((1 + ival), -(mesdiftmp))) * (1 + ival));
-                Vpptem = (1 / vppfactor) * sumaporcsob;
-                penanu = (salcta_eva - vpcm) / (vppen + (Vpptem / PrcTaf));
-                Add_porc_be = Totpofr;
+                vpFactorPension = ival / ((ival * mesesCostoAux) + (1 - Math.Pow((1 + ival), -(mesesDiferidosAux))) * (1 + ival));
+                vpPensionAux = (1 / vpFactorPension) * sumaPorcentajePension;
+                pensionAnual = (saldoCuentaEvaluada - vpMesesConsumidos) / (vpPension + (vpPensionAux / porcentajeRentaTmp));
 
-                if (salcta_eva > 0)
+                if (saldoCuentaEvaluada > 0)
                 {
                     if (Mone == "NS")
                     {
-                        if (Vpptem == 0 || PrcTaf == 0)
+                        if (vpPensionAux == 0 || porcentajeRentaTmp == 0)
                         {
                             Rete_sim = 0;
                         }
                         else
                         {
-                            Rete_sim = ((penanu / PrcTaf) / vppfactor) * sumaporcsob;
+                            Rete_sim = ((pensionAnual / porcentajeRentaTmp) / vpFactorPension) * sumaPorcentajePension;
                         }
                     }
                     else
                     {
-                        if (Vpptem == 0 || PrcTaf == 0)
+                        if (vpPensionAux == 0 || porcentajeRentaTmp == 0)
                         {
                             Rete_sim = 0;
                         }
                         else
                         {
-                            Rete_sim = ((penanu / PrcTaf) / vppfactor) * sumaporcsob;
+                            Rete_sim = ((pensionAnual / porcentajeRentaTmp) / vpFactorPension) * sumaPorcentajePension;
                         }
                     }
                 }
-                sumapenben = 0;
-                sumapenben = (penanu / PrcTaf);
-                vld_saldo = Rete_sim;
-                if (vppen > 0)
+                sumaPensionBeneficiario = 0;
+                sumaPensionBeneficiario = (pensionAnual / porcentajeRentaTmp);
+                if (vpPension > 0)
                 {
-                    salcta_eva = (salcta_eva - vld_saldo);
+                    saldoCuentaEvaluada = (saldoCuentaEvaluada - Rete_sim);
                 }
-                pensim = 0;
-                if (vppen > 0)
+                if (vpPension > 0)
                 {
-                    penanu = (salcta_eva - vpcm) / vppen;
+                    pensionAnual = (saldoCuentaEvaluada - vpMesesConsumidos) / vpPension;
                 }
 
             }
         }
         else
         {
-            if (TipRen == "D")
+            if (tipoRenta == "D")
             {
-                if (DerGratificacion == "S")
+                mesesDiferidosAux = mesesDiferidosModeloCotizacion - mesesCosto;
+                if (mesesDiferidosAux < 0) { mesesDiferidosAux = 0; }
+                ival = ((Math.Pow((1 + (porcentajeAfp)), (double)Exp)) - 1);
+                if (mesesCosto > mesesDiferidosModeloCotizacion)
                 {
-                    mesdif1 = mesdif1 + ((mesdif1 / 12) * 2);
-                }
-                mesdiftmp = mesdif1 - mescon;
-                if (mesdiftmp < 0) { mesdiftmp = 0; }
-                ival = ((Math.Pow((1 + (PrcAfp)), (double)Exp)) - 1);
-                if (mescon > mesdif1)
-                {
-                    mesconTmp = mesdif1;
+                    mesesCostoAux = mesesDiferidosModeloCotizacion;
                 }
                 else
                 {
-                    mesconTmp = mescon;
+                    mesesCostoAux = mesesCosto;
                 }
-                vppfactor = ival / ((ival * mesconTmp) + (1 - Math.Pow((1 + ival), -(mesdiftmp))) * (1 + ival));
-                Vpptem = (1 / vppfactor) * new_prc;
-                penanu = (salcta_eva - vpcm) / (vppen + (Vpptem / PrcTaf));
-                Add_porc_be = Totpofr;
+                vpFactorPension = ival / ((ival * mesesCostoAux) + (1 - Math.Pow((1 + ival), -(mesesDiferidosAux))) * (1 + ival));
+                vpPensionAux = (1 / vpFactorPension) * new_prc;
+                pensionAnual = (saldoCuentaEvaluada - vpMesesConsumidos) / (vpPension + (vpPensionAux / porcentajeRentaTmp));
 
-                if (salcta_eva > 0)
+                if (saldoCuentaEvaluada > 0)
                 {
                     if (Mone == "NS")
                     {
-                        if (Vpptem == 0 || PrcTaf == 0)
+                        if (vpPensionAux == 0 || porcentajeRentaTmp == 0)
                         {
                             Rete_sim = 0;
                         }
                         else
                         {
-                            Rete_sim = (penanu / PrcTaf) * Vpptem;
+                            Rete_sim = (pensionAnual / porcentajeRentaTmp) * vpPensionAux;
                         }
                     }
                     else
                     {
-                        if (Vpptem == 0 || PrcTaf == 0)
+                        if (vpPensionAux == 0 || porcentajeRentaTmp == 0)
                         {
                             Rete_sim = 0;
                         }
                         else
                         {
-                            Rete_sim = (penanu / PrcTaf) * Vpptem;
+                            Rete_sim = (pensionAnual / porcentajeRentaTmp) * vpPensionAux;
                         }
                     }
                 }
-                sumapenben = 0;
-                PensionBenef[1] = (penanu / PrcTaf);
-                sumapenben = sumapenben + PensionBenef[1];
+                sumaPensionBeneficiario = 0;
+                PensionBenef[1] = (pensionAnual / porcentajeRentaTmp);
+                sumaPensionBeneficiario = sumaPensionBeneficiario + PensionBenef[1];
 
-                vld_saldo = Rete_sim;
-                if (vppen > 0)
+                if (vpPension > 0)
                 {
-                    salcta_eva = (salcta_eva - vld_saldo);
+                    saldoCuentaEvaluada = (saldoCuentaEvaluada - Rete_sim);
                 }
-                pensim = 0;
-                if (vppen > 0)
+                if (vpPension > 0)
                 {
-                    penanu = (salcta_eva - vpcm) / vppen;
+                    pensionAnual = (saldoCuentaEvaluada - vpMesesConsumidos) / vpPension;
                 }
             }
         }
@@ -2056,13 +1985,13 @@ namespace RutinaenC
         }
         if (TipPen != "S")
         {
-            sumaporcsob = 1;
+            sumaPorcentajePension = 1;
         }
         #endregion
 
         #region se calcula el de nuevo el tci 
         //calcula la tci de nuevo para la nueva tasa por si se necesita en algun momento
-        PERDI = ((reserva / salcta_eva) - 1) * 100;
+        PERDI = ((reserva / saldoCuentaEvaluada) - 1) * 100;
         tci = 0;
         tce = 0;
         vpte = 0;
@@ -2086,9 +2015,9 @@ namespace RutinaenC
                 {
                     r = 1;
                 }
-                fpagosRes[cr] = (Flupen[i + 1] * penanu + Flucm[i + 1]) / Math.Pow((1 + Tasa), cr);
-                vpte = vpte + ((Flupen[i + 1] * penanu + Flucm[i + 1]) / Math.Pow((1 + Tasa), cr));
-                vpte2 = vpte2 + (((Flupen[i + 1] * penanu) + Flucm[i + 1]) / factual[cr]);
+                fpagosRes[cr] = (Flupen[i + 1] * pensionAnual + Flucm[i + 1]) / Math.Pow((1 + Tasa), cr);
+                vpte = vpte + ((Flupen[i + 1] * pensionAnual + Flucm[i + 1]) / Math.Pow((1 + Tasa), cr));
+                vpte2 = vpte2 + (((Flupen[i + 1] * pensionAnual) + Flucm[i + 1]) / factual[cr]);
                 cr = cr + 1;
             }
         }
@@ -2115,15 +2044,15 @@ namespace RutinaenC
         //TRAE RESERVAS DE MESES CONSUMIDOS
         for (int a = 0; a <= mesesCosto + 1; a++)
         {
-            dflupag = dflupag + (penanu * Flupen[a] + Flucm[a]);
+            dflupag = dflupag + (pensionAnual * Flupen[a] + Flucm[a]);
         }
 
         //TRAE RESERVAS
         at = 1;
         for (int a = (int)mesesCosto + 1; a <= nmax; a++)
         {
-            fpagosRes[at] = (penanu * Flupen[a + 1] + Flucm[a + 1]);
-            resfin = resfin + ((penanu * Flupen[a + 1] + Flucm[a + 1]) / (Math.Pow((1 + tce), at)));
+            fpagosRes[at] = (pensionAnual * Flupen[a + 1] + Flucm[a + 1]);
+            resfin = resfin + ((pensionAnual * Flupen[a + 1] + Flucm[a + 1]) / (Math.Pow((1 + tce), at)));
             at = at + 1;
         }
         reserva = resfin + dflupag;
@@ -2143,10 +2072,10 @@ namespace RutinaenC
         dvarCapAnt = 0;
         resfinAnt = 0;
 
-        dComis = (salcta_eva * PrcCom);
+        dComis = (saldoCuentaEvaluada * PrcCom);
         dGasMan = (gastos / 12);
         dVarRes = reserva;
-        dUtilImp = salcta_eva - (dComis + gasemi + dGasMan + dflupag + dVarRes);
+        dUtilImp = saldoCuentaEvaluada - (dComis + gasemi + dGasMan + dflupag + dVarRes);
         dvarCap = dVarRes * dMarSol;
 
         excedente[1] = dUtilImp - dImp - dvarCap;
@@ -2163,10 +2092,10 @@ namespace RutinaenC
             at = 1;
             iRes = i + mesesCosto;
             if (iRes == 1332) { goto CalSalExd; }
-            flupag = penanu * Flupen[iRes] + Flucm[iRes];
+            flupag = pensionAnual * Flupen[iRes] + Flucm[iRes];
             for (long a = iRes; a <= nmax; a++)
             {
-                resfin = resfin + ((penanu * Flupen[a + 1] + Flucm[a + 1]) / (Math.Pow((1 + tce), at)));
+                resfin = resfin + ((pensionAnual * Flupen[a + 1] + Flucm[a + 1]) / (Math.Pow((1 + tce), at)));
                 at = at + 1;
             }
             resfin = flupag + resfin;
@@ -2241,40 +2170,24 @@ namespace RutinaenC
         #endregion
         }
 
-        public void SumaPensionesConjuntoFamiliar()
-        {
-            #region Suma Pensiones Conjunto Familiar
-            if (TipRen == "I")
-            {
-                sumapenben = 0;
-            }
-            int e = 1; 
-            vlSumaPension = 0;
+        public double SumaPensionesConjuntoFamiliar(beDatosModalidad modeloCotizacion, List<Beneficiario> beneficiarios,ref double pensionAnual)
+        {   
+            double sumaPensionesCF = 0;
+            double porcentajePension;
 
-            for (int vlI = 0; vlI <= Nben; vlI++)
+            string tipoRenta = modeloCotizacion.tipoRenta;
+
+            if (tipoRenta == "I")
+                sumaPensionBeneficiario = 0;
+
+            foreach (var item in beneficiarios)
             {
-                if (TipRen != "I")
-                {
-                    if (Ncorbe[vlI] != 0)
-                    {
-                        if (Penben[vlI] != 0)
-                        {
-                            vlSumaPension = vlSumaPension + (penanu * (Penben[vlI]));
-                        }
-                    }
-                }
-                else
-                {
-                    if (Ncorbe[vlI] != 0)
-                    {
-                        if (Penben[vlI] != 0)
-                        {
-                            vlSumaPension = vlSumaPension + (penanu * (Porcbe_tram[vlI]));
-                        }
-                    }
-                }
+                porcentajePension = item.PorcentajeLegal;
+                if (porcentajePension != 0)
+                    sumaPensionesCF = (tipoRenta != "I") ? sumaPensionesCF + ( pensionAnual * porcentajePension ) : sumaPensionesCF + ( pensionAnual * Porcbe_tram[i] );   
             }
-            #endregion
+            //Falta PorcentajePencion Tramos
+            return sumaPensionesCF;
 
         }
 
