@@ -45,6 +45,7 @@ namespace RutinaenC
                 List<Mortalidad> tablasMortalidad = new List<Mortalidad>();
 
                 List<double> factorReajuste = new List<double>();
+                List<double> flujosPension = new List<double>();
                 List<int> gratificacion = new List<int>();
 
                 double tasaAnclaje;
@@ -76,6 +77,7 @@ namespace RutinaenC
                 else
                     factorReajuste = ObtenerTipoAjustado(modeloCotizacion, beneficiarios, gratificacion);
 
+                flujosPension = CalcularFlujosPension(modeloCotizacion, beneficiarios, tablasMortalidad,)
                 return resultados;
             }
             catch (Exception)
@@ -789,7 +791,8 @@ namespace RutinaenC
         #endregion
 
         #region "Calcula Flujos de Pensión"  
-        public void CalcularFlujosPension(beDatosModalidad modeloCotizacion, List<Beneficiario> beneficiarios, List<Mortalidad> listaLxDin, List<Mortalidad> tablasMortalidad, List<int> gratificacion, List<double> factorReajuste)
+        public List<double> CalcularFlujosPension(beDatosModalidad modeloCotizacion, List<Beneficiario> beneficiarios,
+         List<Mortalidad> tablasMortalidad, List<int> gratificacion, List<double> factorReajuste)
         {
             int finMortalidad = modeloCotizacion.FinTab;
 
@@ -827,9 +830,11 @@ namespace RutinaenC
                 FlujoPensionSupervivencia(noTitular, modeloCotizacion, tablasMortalidad, gratificacion, factorReajuste, ref fpx, ref flujosPension);
             }
             else
-            {   FlujoPensionTitular(titular, modeloCotizacion, tablasMortalidad, gratificacion, factorReajuste, flujoTramos, ref fpx, ref flujosPension);
+            {   
+                FlujoPensionTitular(titular, modeloCotizacion, tablasMortalidad, gratificacion, factorReajuste, flujoTramos, ref fpx, ref flujosPension);
                 FlujoPensionNoTitular(noTitular, modeloCotizacion, tablasMortalidad, gratificacion, factorReajuste, flujoTramos, ref fpx, ref flujosPension);
             }
+            return flujosPension;
         }
 
         public void FlujoPensionTitular(Beneficiario titular, beDatosModalidad modeloCotizacion, List<Mortalidad> tablasMortalidad, List<int> gratificacion, List<double> factorReajuste, List<double> flujoTramos, ref List<double> fpx, ref List<double> flujosPension)
@@ -1659,7 +1664,7 @@ namespace RutinaenC
         #region "Inicializacion de variables"
          //'"EMPIEZA LA RUTINA DEL CALCULO DE TASA "
         CalTva: 
-        
+
         tasatirc = 0;
         PERDI = ((reserva / saldoCuentaEvaluada) - 1) * 100;
         #endregion
