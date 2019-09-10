@@ -838,6 +838,7 @@ namespace RutinaenC
             string tipoPension = modeloCotizacion.Tippen;
             string tipoRenta = modeloCotizacion.TipRen;
             string tipoModalidad = modeloCotizacion.TipMod;
+            string tipoInvalidez = titular.TipoInvalidez;
 
             int mesesNacimiento = titular.AniosFechaNacimiento * 12 + titular.MesesFechaNacimiento;
             int aniosFechaDevengue = Convert.ToInt32(modeloCotizacion.FecDev.Substring(0, 4));
@@ -875,7 +876,7 @@ namespace RutinaenC
 
             if (indiceCobertura == "S")
             {
-                porcentaje = tipoPension == "T" ? 0.7 : tipoPension == "P" ? 0.5 : 1;
+                porcentaje = tipoInvalidez == "T" ? 0.7 : tipoInvalidez == "P" ? 0.5 : 1;
                 porcentajePension = titular.PorcentajePension * porcentaje;
             }
 
@@ -1541,6 +1542,9 @@ namespace RutinaenC
             List<double> captualRequeridoUnitarioSepelio = new List<double>();
             List<double> valores = new List<double>();
 
+            string tipoPension = modeloCotizacion.Cobertura;
+            string tipoRenta = modeloCotizacion.TipRen;
+
             int cr = 1;
 
             double captualRU;
@@ -1548,18 +1552,30 @@ namespace RutinaenC
             double tasaTIR;
             double pensionAnual;
             double tce;
+            double ival;
+            double vpFactorPension;
+            double vpPensionAux;
 
             double vpPension = 0;
             double vpPensionResultado = 0;
             double vpMesesConsumidos = 0;
             double vpMesesConsumidosResultado = 0;
             double sumaPensionBeneficiario = 0;
+            double retencion = 0;
+            //Porcentaje aun no ajustado
+            double porcentaje = 1; 
+           
             double saldoCuentaEvaluada = montoCic;
             double porcentajeAfp = modeloCotizacion.RenAfp;
             double porcentajeRentaTmp = modeloCotizacion.RenTmp;
             
             double tirVenta = Math.Pow(1 + (tasas.PrcTas / 100), (double) Exp) - 1 + 0.00001;
 
+            int mesesDiferidosAux = mesesDiferidos;
+            int mesesDiferidosModeloCotizacion = modeloCotizacion.MesDif;
+            int mesesCostoAux;
+
+            
             #region Pension Anual
             tirVenta = tirVenta - 0.00001;
             valores.Add(tirVenta);
@@ -1596,99 +1612,56 @@ namespace RutinaenC
 
         pensionAnual = (saldoCuentaEvaluada - vpMesesConsumidos) / vpPension;
         #endregion
+        
+        #region "Primer if grandote"
+        if (tipoRenta == "D")
+        {
+            mesesDiferidosAux = mesesDiferidosModeloCotizacion - mesesCosto;
+            
+            if (mesesDiferidosAux < 0)
+                mesesDiferidosAux = 0;
+
+            ival = ((Math.Pow((1 + porcentajeAfp), (double)Exp)) - 1);
+
+            mesesCostoAux = (mesesCosto > mesesDiferidosModeloCotizacion) ? mesesDiferidosModeloCotizacion : mesesCosto;
+
+            vpFactorPension = ival / ((ival * mesesCostoAux) + (1 - Math.Pow((1 + ival), -(mesesDiferidosAux))) * (1 + ival));
+            if(tipoPension == "S")
+            {
+                vpPensionAux = (1 / vpFactorPension) * sumaPorcentajePension;
+                pensionAnual = (saldoCuentaEvaluada - vpMesesConsumidos) / (vpPension + (vpPensionAux / porcentajeRentaTmp));
+                if (saldoCuentaEvaluada > 0)
+                    retencion = (vpPensionAux == 0 || porcentajeRentaTmp == 0) ? 0 : ((pensionAnual / porcentajeRentaTmp) / vpFactorPension) * sumaPorcentajePension;
+            }
+            else
+            {
+                vpPensionAux = (1 / vpFactorPension) * porcentaje;
+                pensionAnual = (saldoCuentaEvaluada - vpMesesConsumidos) / (vpPension + (vpPensionAux / porcentajeRentaTmp));
+                if (saldoCuentaEvaluada > 0)
+                    retencion = (vpPensionAux == 0 || porcentajeRentaTmp == 0) ? 0 : (pensionAnual / porcentajeRentaTmp) * vpPensionAux; 
+            }
+            
+            sumaPensionBeneficiario = pensionAnual / porcentajeRentaTmp;
+
+            if (vpPension > 0)
+            {
+                saldoCuentaEvaluada = saldoCuentaEvaluada - retencion;
+                pensionAnual = (saldoCuentaEvaluada - vpMesesConsumidos) / vpPension;
+            }
+        }
+        
+        
+        #endregion
+        
         //663      
         #region Calcula Tasa de Venta
        
         #region "Inicializacion de variables"
          //'"EMPIEZA LA RUTINA DEL CALCULO DE TASA "
-        CalTva:
+        CalTva: 
+        
         tasatirc = 0;
         PERDI = ((reserva / saldoCuentaEvaluada) - 1) * 100;
-        #endregion
-        #region "Primer if grandote"
-        int mesesDiferidosAux = Mesdif;
-        int mesesDiferidosModeloCotizacion = modeloCotizacion.MesDif;
-        int mesesCostoAux;
-
-        double ival;
-        double vpFactorPension;
-        double vpPensionAux;
-
-        string tipoRenta = modeloCotizacion.Cobertura;
-
-        if (TipPen == "S")
-        {
-            if (tipoRenta == "D")
-            {
-                //''SOBREVIVENCIA DIFERIDA
-                mesesDiferidosAux = mesesDiferidosModeloCotizacion - mesesCosto;
-               
-                if (mesesDiferidosAux < 0)
-                    mesesDiferidosAux = 0;
-
-                ival = ((Math.Pow((1 + porcentajeAfp), (double)Exp)) - 1);
-
-                mesesCostoAux = (mesesCosto > mesesDiferidosModeloCotizacion) ?
-                 mesesDiferidosModeloCotizacion : mesesCosto;
-
-                vpFactorPension = ival / ((ival * mesesCostoAux) + (1 - Math.Pow((1 + ival), 
-                -(mesesDiferidosAux))) * (1 + ival));
-
-                vpPensionAux = (1 / vpFactorPension) * sumaPorcentajePension;
-                pensionAnual = (saldoCuentaEvaluada - vpMesesConsumidos) / 
-                (vpPension + (vpPensionAux / porcentajeRentaTmp));
-
-                if (saldoCuentaEvaluada > 0)
-                    Rete_sim = (vpPensionAux == 0 || porcentajeRentaTmp == 0) ? 0 
-                    : ((pensionAnual / porcentajeRentaTmp) / vpFactorPension) * sumaPorcentajePension;
-
-                sumaPensionBeneficiario = (pensionAnual / porcentajeRentaTmp);
-
-                if (vpPension > 0)
-                {
-                    saldoCuentaEvaluada = (saldoCuentaEvaluada - Rete_sim);
-                    pensionAnual = (saldoCuentaEvaluada - vpMesesConsumidos) / vpPension;
-                }
-            }
-        }
-        else
-        {
-            if (tipoRenta == "D")
-            {
-
-                mesesDiferidosAux = mesesDiferidosModeloCotizacion - mesesCosto;
-                
-                if (mesesDiferidosAux < 0) 
-                    mesesDiferidosAux = 0; 
-
-                ival = ((Math.Pow((1 + (porcentajeAfp)), (double)Exp)) - 1);
-
-                mesesCostoAux = (mesesCosto > mesesDiferidosModeloCotizacion) ? 
-                mesesDiferidosModeloCotizacion : mesesCosto;
-
-                vpFactorPension = ival / ((ival * mesesCostoAux) + (1 - Math.Pow((1 + ival),
-                 -(mesesDiferidosAux))) * (1 + ival));
-
-                vpPensionAux = (1 / vpFactorPension) * new_prc;
-                pensionAnual = (saldoCuentaEvaluada - vpMesesConsumidos) / 
-                (vpPension + (vpPensionAux / porcentajeRentaTmp));
-
-                if (saldoCuentaEvaluada > 0)
-                    Rete_sim =(vpPensionAux == 0 || porcentajeRentaTmp == 0) ? 0
-                     : (pensionAnual / porcentajeRentaTmp) * vpPensionAux;
-
-                sumaPensionBeneficiario = 0;
-                PensionBenef[1] = (pensionAnual / porcentajeRentaTmp);
-                sumaPensionBeneficiario = sumaPensionBeneficiario + PensionBenef[1];
-
-                if (vpPension > 0)
-                {
-                    saldoCuentaEvaluada = (saldoCuentaEvaluada - Rete_sim);
-                    pensionAnual = (saldoCuentaEvaluada - vpMesesConsumidos) / vpPension;
-                }
-
-            }
-        }
         #endregion
         
         #region  "inicializa variables para obtener reservas"
@@ -1696,7 +1669,7 @@ namespace RutinaenC
         {
             excedente[ir] = 0;
         }
-        if (TipPen != "S")
+        if (tipoPension != "S")
         {
             sumaPorcentajePension = 1;
         }
@@ -1720,7 +1693,7 @@ namespace RutinaenC
         }
         reserva = resfin + dflupag;
         #endregion
-
+        
         #region Obtener Flujo Exedentes
 
         dComis = (saldoCuentaEvaluada * PrcCom);
@@ -1857,7 +1830,7 @@ namespace RutinaenC
         #endregion
         
         #region "Segundo if grandote igual al primero"
-        if (TipPen == "S")
+        if (tipoPension == "S")
         {
             if (tipoRenta == "D")
             {
@@ -1886,22 +1859,22 @@ namespace RutinaenC
                     {
                         if (vpPensionAux == 0 || porcentajeRentaTmp == 0)
                         {
-                            Rete_sim = 0;
+                            retencion = 0;
                         }
                         else
                         {
-                            Rete_sim = ((pensionAnual / porcentajeRentaTmp) / vpFactorPension) * sumaPorcentajePension;
+                            retencion = ((pensionAnual / porcentajeRentaTmp) / vpFactorPension) * sumaPorcentajePension;
                         }
                     }
                     else
                     {
                         if (vpPensionAux == 0 || porcentajeRentaTmp == 0)
                         {
-                            Rete_sim = 0;
+                            retencion = 0;
                         }
                         else
                         {
-                            Rete_sim = ((pensionAnual / porcentajeRentaTmp) / vpFactorPension) * sumaPorcentajePension;
+                            retencion = ((pensionAnual / porcentajeRentaTmp) / vpFactorPension) * sumaPorcentajePension;
                         }
                     }
                 }
@@ -1909,7 +1882,7 @@ namespace RutinaenC
                 sumaPensionBeneficiario = (pensionAnual / porcentajeRentaTmp);
                 if (vpPension > 0)
                 {
-                    saldoCuentaEvaluada = (saldoCuentaEvaluada - Rete_sim);
+                    saldoCuentaEvaluada = (saldoCuentaEvaluada - retencion);
                 }
                 if (vpPension > 0)
                 {
@@ -1943,32 +1916,31 @@ namespace RutinaenC
                     {
                         if (vpPensionAux == 0 || porcentajeRentaTmp == 0)
                         {
-                            Rete_sim = 0;
+                            retencion = 0;
                         }
                         else
                         {
-                            Rete_sim = (pensionAnual / porcentajeRentaTmp) * vpPensionAux;
+                            retencion = (pensionAnual / porcentajeRentaTmp) * vpPensionAux;
                         }
                     }
                     else
                     {
                         if (vpPensionAux == 0 || porcentajeRentaTmp == 0)
                         {
-                            Rete_sim = 0;
+                            retencion = 0;
                         }
                         else
                         {
-                            Rete_sim = (pensionAnual / porcentajeRentaTmp) * vpPensionAux;
+                            retencion = (pensionAnual / porcentajeRentaTmp) * vpPensionAux;
                         }
                     }
                 }
-                sumaPensionBeneficiario = 0;
-                PensionBenef[1] = (pensionAnual / porcentajeRentaTmp);
-                sumaPensionBeneficiario = sumaPensionBeneficiario + PensionBenef[1];
+
+                sumaPensionBeneficiario = (pensionAnual / porcentajeRentaTmp);
 
                 if (vpPension > 0)
                 {
-                    saldoCuentaEvaluada = (saldoCuentaEvaluada - Rete_sim);
+                    saldoCuentaEvaluada = (saldoCuentaEvaluada - retencion);
                 }
                 if (vpPension > 0)
                 {
@@ -1983,7 +1955,7 @@ namespace RutinaenC
         {
             excedente[ir] = 0;
         }
-        if (TipPen != "S")
+        if (tipoPension != "S")
         {
             sumaPorcentajePension = 1;
         }
