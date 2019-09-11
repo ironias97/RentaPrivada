@@ -46,6 +46,7 @@ namespace RutinaenC
 
                 List<double> factorReajuste = new List<double>();
                 List<double> flujosPension = new List<double>();
+                List<double> flujosMesesConsumidos = new List<double>();
                 List<int> gratificacion = new List<int>();
 
                 double tasaAnclaje;
@@ -57,6 +58,7 @@ namespace RutinaenC
 
                 int finTab = modeloCotizacion.FinTab;
                 int tipoReajuste = modeloCotizacion.TipRea;
+                int limite = 0;
 
                 ObtenerDatosCotizacion(modeloCotizacion);
 
@@ -77,7 +79,7 @@ namespace RutinaenC
                 else
                     factorReajuste = ObtenerTipoAjustado(modeloCotizacion, beneficiarios, gratificacion);
 
-                flujosPension = CalcularFlujosPension(modeloCotizacion, beneficiarios, tablasMortalidad,)
+                flujosPension = CalcularFlujosPension(modeloCotizacion, beneficiarios, tablasMortalidad, gratificacion, factorReajuste, ref flujosMesesConsumidos, ref limite);
                 return resultados;
             }
             catch (Exception)
@@ -85,7 +87,7 @@ namespace RutinaenC
                 return null;
             }
         }
-
+        #region Codigo Optimizado probado
         /// <summary>
         /// Antonio Quezada
         /// 2019-07-30
@@ -789,10 +791,11 @@ namespace RutinaenC
         }
 
         #endregion
-
+        #endregion
+       
         #region "Calcula Flujos de Pensión"  
-        public List<double> CalcularFlujosPension(beDatosModalidad modeloCotizacion, List<Beneficiario> beneficiarios,
-         List<Mortalidad> tablasMortalidad, List<int> gratificacion, List<double> factorReajuste)
+        public List<double> CalcularFlujosPension(beDatosModalidad modeloCotizacion, List<Beneficiario> beneficiarios, List<Mortalidad> tablasMortalidad, List<int> gratificacion, List<double> factorReajuste, 
+        ref List<double> flujosMesesConsumidos, ref int limite)
         {
             int finMortalidad = modeloCotizacion.FinTab;
 
@@ -831,14 +834,16 @@ namespace RutinaenC
             }
             else
             {   
-                FlujoPensionTitular(titular, modeloCotizacion, tablasMortalidad, gratificacion, factorReajuste, flujoTramos, ref fpx, ref flujosPension);
+                flujosMesesConsumidos = FlujoPensionTitular(titular, modeloCotizacion, tablasMortalidad, gratificacion, factorReajuste, flujoTramos, ref fpx, ref flujosPension, ref limite);
                 FlujoPensionNoTitular(noTitular, modeloCotizacion, tablasMortalidad, gratificacion, factorReajuste, flujoTramos, ref fpx, ref flujosPension);
             }
             return flujosPension;
         }
 
-        public void FlujoPensionTitular(Beneficiario titular, beDatosModalidad modeloCotizacion, List<Mortalidad> tablasMortalidad, List<int> gratificacion, List<double> factorReajuste, List<double> flujoTramos, ref List<double> fpx, ref List<double> flujosPension)
+        public List<double> FlujoPensionTitular(Beneficiario titular, beDatosModalidad modeloCotizacion, List<Mortalidad> tablasMortalidad, List<int> gratificacion, 
+        List<double> factorReajuste, List<double> flujoTramos, ref List<double> fpx, ref List<double> flujosPension, ref int limite)
         {
+            #region Declaracion de Variables
             string indiceCobertura = modeloCotizacion.IndCob;
             string tipoPension = modeloCotizacion.Tippen;
             string tipoRenta = modeloCotizacion.TipRen;
@@ -873,12 +878,12 @@ namespace RutinaenC
             int edadMesesDevengue;
             int edadMesesDevengueLimite;
             int edadMesesDevengueAux;
-            int limite;
             int contador;
 
             List<double> valores = new List<double>(); // Lista para obtener el valor mínimo o máximo
             List<double> flujosMesesConsumidos = new List<double>();
-
+            #endregion
+            
             if (indiceCobertura == "S")
             {
                 porcentaje = tipoInvalidez == "T" ? 0.7 : tipoInvalidez == "P" ? 0.5 : 1;
@@ -960,6 +965,7 @@ namespace RutinaenC
                     if (tipoModalidad == "S" && edadMesesDevengueAux + 1 == finMortalidad)
                         break;
                 }
+                return flujosMesesConsumidos;
             }
             catch (Exception ex)
             {
